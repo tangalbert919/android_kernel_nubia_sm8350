@@ -27,6 +27,7 @@
 
 #include "trace.h"
 #include "nvme.h"
+#include <linux/msm_pcie.h>
 
 #define SQ_SIZE(q)	((q)->q_depth << (q)->sqes)
 #define CQ_SIZE(q)	((q)->q_depth * sizeof(struct nvme_completion))
@@ -2376,6 +2377,7 @@ static int nvme_pci_enable(struct nvme_dev *dev)
                         "set queue depth=%u\n", dev->q_depth);
 	}
 
+	dev->q_depth = 64; //+linx
 	/*
 	 * Controllers with the shared tags quirk need the IO queue to be
 	 * big enough so that we get 32 tags for the admin queue
@@ -2852,6 +2854,11 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	nvme_reset_ctrl(&dev->ctrl);
 	nvme_get_ctrl(&dev->ctrl);
 	async_schedule(nvme_async_probe, dev);
+
+{   //+linx fix ssd don't work after suspend
+	int ret = msm_pcie_pm_control(MSM_PCIE_DISABLE_PC, pdev->bus->number, pdev, NULL, 0);
+	printk(KERN_ERR "linx06:%s(),%d,msm_pcie_pm_control(MSM_PCIE_DISABLE_PC) ret=\n", __func__, __LINE__, ret);
+}
 
 	return 0;
 

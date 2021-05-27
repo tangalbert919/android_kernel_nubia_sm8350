@@ -3078,6 +3078,9 @@ extern int kernel_read_file_from_path(const char *, void **, loff_t *, loff_t,
 extern int kernel_read_file_from_fd(int, void **, loff_t *, loff_t,
 				    enum kernel_read_file_id);
 extern ssize_t kernel_read(struct file *, void *, size_t, loff_t *);
+//added by nubia, for read file in kernel, begin
+extern ssize_t __kernel_read(struct file *, void *, size_t, loff_t *);
+//added by nubia, for read file in kernel, end
 extern ssize_t kernel_write(struct file *, const void *, size_t, loff_t *);
 extern ssize_t __kernel_write(struct file *, const void *, size_t, loff_t *);
 extern struct file * open_exec(const char *);

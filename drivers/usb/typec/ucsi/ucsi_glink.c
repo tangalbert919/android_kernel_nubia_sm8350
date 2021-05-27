@@ -16,7 +16,8 @@
 #include <linux/usb/ucsi_glink.h>
 
 #include "ucsi.h"
-
+#include "../../nubia/nubia_usb_test.h"
+#include <linux/usb/nubia_usb_debug.h>
 /* PPM specific definitions */
 #define MSG_OWNER_UC			32779
 #define MSG_TYPE_REQ_RESP		1
@@ -38,7 +39,9 @@
 		ipc_log_string(ucsi_ipc_log, fmt, ##__VA_ARGS__); \
 		pr_debug(fmt, ##__VA_ARGS__); \
 	} while (0)
-
+#ifdef CONFIG_NUBIA_USB30_FEATURE
+u32 nubia_global_cc_orientation = 0x0;
+#endif
 struct ucsi_read_buf_req_msg {
 	struct pmic_glink_hdr	hdr;
 };
@@ -203,6 +206,10 @@ static int handle_ucsi_notify(struct ucsi_dev *udev, void *data, size_t len)
 
 	msg_ptr = data;
 	cci = msg_ptr->notification;
+	#ifdef CONFIG_NUBIA_USB30_FEATURE
+	nubia_global_cc_orientation = msg_ptr->receiver;
+	NUBIA_USB_INFO("receiver the data form adsp cc_orientation = %02x.\n", msg_ptr->receiver);
+	#endif
 	ucsi_log("notify:", UCSI_CCI, (u8 *)&cci, sizeof(cci));
 
 	if (test_bit(CMD_PENDING, &udev->flags) &&

@@ -329,6 +329,75 @@ static int f2fs_acl_create_masq(struct posix_acl *acl, umode_t *mode_p)
 	return not_equiv;
 }
 
+//+linx
+#define ANDROID_MEDIA_RW_UID (1023)
+
+// #define DEBUG_NUBIA
+#ifdef DEBUG_NUBIA
+#define FULLNAME_LEN 1024
+static char fullname[FULLNAME_LEN] = {0};
+#endif
+
+static char *nubia_special_rw_path[] = {
+    "nubialog",
+    "tencent",
+    "Tencent",
+    NULL,
+};
+int not_nubia_rw_dir(struct inode *dir){
+    int ret = 1;
+    int i = 0;
+    struct dentry *dentry;
+
+    spin_lock(&dir->i_lock);
+#if 0
+    hlist_for_each_entry(dentry, &dir->i_dentry, d_u.d_alias) {
+        break;
+    }
+#else
+    dentry = hlist_entry_safe(dir->i_dentry.first, typeof(struct dentry), d_u.d_alias);
+#endif
+
+#ifdef DEBUG_NUBIA
+    memset(fullname, 0, FULLNAME_LEN);
+#endif
+
+    while(strcmp("/", dentry->d_name.name)){
+#ifdef DEBUG_NUBIA
+        strcat(fullname, dentry->d_name.name);
+        strcat(fullname, "/");
+        printk("%s(),%d,parent_uid=%d\n", __func__, __LINE__, dentry->d_parent->d_inode->i_uid.val);
+#endif
+        i = 0;
+        while(nubia_special_rw_path[i]){
+            if((0 == strcmp(nubia_special_rw_path[i], dentry->d_name.name))
+                && (ANDROID_MEDIA_RW_UID == dentry->d_parent->d_inode->i_uid.val)    // parent owner is media_rw
+                && ((0 == strcmp("0", dentry->d_parent->d_name.name))                // parent name is "0"
+                    || (0 == strcmp("9999", dentry->d_parent->d_name.name))))        // parent name is "9999"
+            {
+                ret = 0;
+#ifdef DEBUG_NUBIA
+                strcat(fullname, " ** match");
+#endif
+                goto match;
+            }
+            ++i;
+        }
+        dentry = dentry->d_parent;
+    }
+
+match:
+
+#ifdef DEBUG_NUBIA
+    strcat(fullname, "/");
+    printk("%s(),%d,fullname=%s\n", __func__, __LINE__, fullname);
+#endif
+
+    spin_unlock(&dir->i_lock);
+    return ret;
+}
+//-linx
+
 static int f2fs_acl_create(struct inode *dir, umode_t *mode,
 		struct posix_acl **default_acl, struct posix_acl **acl,
 		struct page *dpage)
@@ -345,7 +414,25 @@ static int f2fs_acl_create(struct inode *dir, umode_t *mode,
 
 	p = __f2fs_get_acl(dir, ACL_TYPE_DEFAULT, dpage);
 	if (!p || p == ERR_PTR(-EOPNOTSUPP)) {
+//+linx
+#ifdef DEBUG_NUBIA
+        printk("%s(),%d,before mode=%o,current_umask=%o\n", __func__, __LINE__, *mode, current_umask());
+#endif
+        if(not_nubia_rw_dir(dir)){
+//-linx
 		*mode &= ~current_umask();
+//+linx
+        }else{
+            if(S_ISDIR(*mode)){
+                *mode |= 0777;
+            }else{
+                *mode |= 0666;
+            }
+        }
+#ifdef DEBUG_NUBIA
+        printk("%s(),%d,after mode=%o,current_umask=%o\n", __func__, __LINE__, *mode, current_umask());
+#endif
+//-linx
 		return 0;
 	}
 	if (IS_ERR(p))

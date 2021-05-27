@@ -103,6 +103,12 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/initcall.h>
 
+
+//Nubia FileObserver Begin
+#include <../fs/fsobserver.h>
+//Nubia FileObserver End
+
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -1129,6 +1135,13 @@ static int __ref kernel_init(void *unused)
 	numa_default_policy();
 
 	rcu_end_inkernel_boot();
+
+    //Nubia FileObserver Begin
+    #ifdef ENABLE_FILE_OBSERVER
+    fsobserver_init();
+    #endif
+    printk(KERN_WARNING "[fsobserver] kernel_init3\n");
+    //Nubia FileObserver End
 
 	if (ramdisk_execute_command) {
 		ret = run_init_process(ramdisk_execute_command);

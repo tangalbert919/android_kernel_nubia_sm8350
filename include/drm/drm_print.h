@@ -271,6 +271,7 @@ static inline struct drm_printer drm_debug_printer(const char *prefix)
 #define DRM_UT_STATE		0x40
 #define DRM_UT_LEASE		0x80
 #define DRM_UT_DP		0x100
+#define DRM_UT_NUBIA		0x200
 
 __printf(3, 4)
 void drm_dev_printk(const struct device *dev, const char *level,
@@ -350,6 +351,10 @@ void drm_err(const char *format, ...);
  * @dev: device pointer
  * @fmt: printf() like format string.
  */
+=======
+#define DRM_NUBIA_DEBUG(dev, fmt, ...)				\
+	drm_dev_dbg(dev, DRM_UT_NUBIA, fmt, ##__VA_ARGS__)
+
 #define DRM_DEV_DEBUG(dev, fmt, ...)					\
 	drm_dev_dbg(dev, DRM_UT_CORE, fmt, ##__VA_ARGS__)
 #define DRM_DEBUG(fmt, ...)						\

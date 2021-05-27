@@ -25,6 +25,11 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
+//Nubia FileObserver Begin
+#include "fsobserver.h"
+//Nubia FileObserver End
+
+
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -429,6 +434,33 @@ ssize_t __vfs_read(struct file *file, char __user *buf, size_t count,
 		return -EINVAL;
 }
 
+//added by nubia, for read file in kernel, begin
+ssize_t __kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
+{
+	mm_segment_t old_fs;
+	char __user *p;
+	ssize_t ret;
+
+	if (!(file->f_mode & FMODE_CAN_READ))
+		return -EINVAL;
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+	p = (__force char __user *)buf;
+	if (count > MAX_RW_COUNT)
+		count =  MAX_RW_COUNT;
+	ret = __vfs_read(file, p, count, pos);
+	set_fs(old_fs);
+	if (ret > 0) {
+		fsnotify_modify(file);
+		add_wchar(current, ret);
+	}
+	inc_syscw(current);
+	return ret;
+}
+EXPORT_SYMBOL(__kernel_read);
+//added by nubia, for read file in kernel, end
+
 ssize_t kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
 {
 	mm_segment_t old_fs;
@@ -462,6 +494,11 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 		if (ret > 0) {
 			fsnotify_access(file);
 			add_rchar(current, ret);
+			//Nubia FileObserver Begin
+			#ifdef ENABLE_FILE_OBSERVER
+			fsobserver_post_read(file);
+			#endif
+			//Nubia FileObserver End
 		}
 		inc_syscr(current);
 	}
@@ -490,6 +527,13 @@ static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t 
 static ssize_t __vfs_write(struct file *file, const char __user *p,
 			   size_t count, loff_t *pos)
 {
+
+    //Nubia FileObserver Begin
+    #ifdef ENABLE_FILE_OBSERVER
+    fsobserver_post_write(file);
+    #endif
+    //Nubia FileObserver End
+
 	if (file->f_op->write)
 		return file->f_op->write(file, p, count, pos);
 	else if (file->f_op->write_iter)

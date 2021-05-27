@@ -20,7 +20,7 @@
 #include <linux/usb.h>
 
 #include "trace.h"
-
+#include <linux/usb/nubia_usb_debug.h>
 /**
  * struct usb_udc - describes one usb device controller
  * @driver - the gadget driver pointer. For use by the class code
@@ -640,6 +640,7 @@ int usb_gadget_vbus_disconnect(struct usb_gadget *gadget)
 	int ret = 0;
 
 	if (!gadget->ops->vbus_session) {
+		NUBIA_USB_INFO("exit vbus_session because of vbus_session not support.\n");
 		ret = -EOPNOTSUPP;
 		goto out;
 	}
@@ -712,6 +713,7 @@ int usb_gadget_disconnect(struct usb_gadget *gadget)
 
 	if (!gadget->ops->pullup) {
 		ret = -EOPNOTSUPP;
+		NUBIA_USB_INFO("eixt usb_gadget_disconnect because of pullup failed.\n");
 		goto out;
 	}
 
@@ -721,12 +723,14 @@ int usb_gadget_disconnect(struct usb_gadget *gadget)
 		 * Gadget will stay disconnected after activation.
 		 */
 		gadget->connected = false;
+		NUBIA_USB_INFO("eixt usb_gadget_disconnect because of gadget is deactivated.\n");
 		goto out;
 	}
 
 	ret = gadget->ops->pullup(gadget, 0);
 	if (!ret) {
 		gadget->connected = 0;
+		NUBIA_USB_INFO("entry the disconnect notify.\n");
 		gadget->udc->driver->disconnect(gadget);
 	}
 
@@ -1442,9 +1446,10 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 	struct usb_udc		*udc = NULL;
 	int			ret = -ENODEV;
 
-	if (!driver || !driver->unbind)
+	if (!driver || !driver->unbind){
+		NUBIA_USB_INFO("exit usb_gadget_unregister_driver because of the driver and driver-unbind is null.\n");
 		return -EINVAL;
-
+	}
 	mutex_lock(&udc_lock);
 	list_for_each_entry(udc, &udc_list, list) {
 		if (udc->driver == driver) {

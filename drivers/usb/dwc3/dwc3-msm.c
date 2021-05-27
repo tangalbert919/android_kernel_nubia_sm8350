@@ -49,7 +49,8 @@
 #include "gadget.h"
 #include "debug.h"
 #include "xhci.h"
-
+#include <linux/usb/nubia_usb_debug.h>
+#include <linux/soc/zte/usb_switch_dp.h>
 #define SDP_CONNECTION_CHECK_TIME 10000 /* in ms */
 
 /* time out to wait for USB cable status notification (in ms)*/
@@ -3765,9 +3766,13 @@ static int dwc3_msm_usb_set_role(struct device *dev, enum usb_role role)
 	struct dwc3_msm *mdwc = dev_get_drvdata(dev);
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
 	enum usb_role cur_role = USB_ROLE_NONE;
-
+	int state;
 	cur_role = dwc3_msm_usb_get_role(dev);
-
+	get_dp_state(&state);
+	printk(">>>nubia<<<dwc3_msm_usb_set_role cur_role = %d, state = %d, role = %d.\n", cur_role, state, role);
+	if (cur_role == USB_ROLE_HOST && state){
+		return 0;
+	}
 	switch (role) {
 	case USB_ROLE_HOST:
 		mdwc->vbus_active = false;
@@ -4936,7 +4941,7 @@ static void dwc3_override_vbus_status(struct dwc3_msm *mdwc, bool vbus_present)
 static int dwc3_otg_start_peripheral(struct dwc3_msm *mdwc, int on)
 {
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
-
+	NUBIA_USB_INFO("Turn %d the gadget.\n", on);
 	pm_runtime_get_sync(mdwc->dev);
 	dbg_event(0xFF, "StrtGdgt gsync",
 		atomic_read(&mdwc->dev->power.usage_count));

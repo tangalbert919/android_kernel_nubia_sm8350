@@ -608,6 +608,9 @@
 #define KEY_ASSISTANT		0x247	/* AL Context-aware desktop assistant */
 #define KEY_KBD_LAYOUT_NEXT	0x248	/* AC Next Keyboard Layout Select */
 
+#define KEY_GAMEFIRE_LEFT      0x550  /* Nubia game fire key left*/
+#define KEY_GAMEFIRE_RIGHT             0x249   /* Nubia game fire key right*/
+
 #define KEY_BRIGHTNESS_MIN		0x250	/* Set Brightness to Minimum */
 #define KEY_BRIGHTNESS_MAX		0x251	/* Set Brightness to Maximum */
 

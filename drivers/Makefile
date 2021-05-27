@@ -186,3 +186,7 @@ obj-$(CONFIG_SIOX)		+= siox/
 obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_INTERCONNECT)	+= interconnect/
 obj-$(CONFIG_COUNTER)		+= counter/
+obj-$(CONFIG_NUBIA_DRIVERS)	+= nubia/
+obj-$(CONFIG_NUBIA_FAN)		+= fan/
+obj-$(CONFIG_NUBIA_ESE)		+= ese/
+obj-$(CONFIG_NUBIA_HW_VERSION)	+= nubia_hw_version/

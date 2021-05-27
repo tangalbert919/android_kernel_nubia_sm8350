@@ -1,0 +1,8 @@
+#nubia add for usb test
+config NUBIA_USB_TEST
+        bool "NUBIA_USB_TEST"
+        default n
+        ---help---
+          Add some usb test file node for factory test.
+
+

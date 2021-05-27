@@ -15,7 +15,7 @@
 #include <linux/power_supply.h>
 #include <linux/slab.h>
 #include <linux/stat.h>
-
+#include <linux/delay.h>
 #include "power_supply.h"
 
 #define MAX_PROP_NAME_LEN 30
@@ -27,6 +27,20 @@ struct power_supply_attr {
 	const char * const *text_values;
 	int text_values_len;
 };
+
+#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+extern ssize_t nubia_set_charge_bypass(const char *buf);
+extern int inline qti_battery_get_battery_type(void);
+extern ssize_t nubia_set_charger(int value);
+
+u16 charge_bypass_flag = 0;
+int set_en_charger = 1;
+int set_disenable_charger= 0;
+int charge_current = 0;
+int charger_online = 0;
+int current_count = 0;
+int battery_soc = 0;
+#endif
 
 #define _POWER_SUPPLY_ATTR(_name, _text, _len)	\
 [POWER_SUPPLY_PROP_ ## _name] =			\
@@ -156,6 +170,9 @@ static struct power_supply_attr power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(CURRENT_BOOT),
 	POWER_SUPPLY_ATTR(POWER_NOW),
 	POWER_SUPPLY_ATTR(POWER_AVG),
+#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+	POWER_SUPPLY_ATTR(LCD_ON),
+#endif
 	POWER_SUPPLY_ATTR(CHARGE_FULL_DESIGN),
 	POWER_SUPPLY_ATTR(CHARGE_EMPTY_DESIGN),
 	POWER_SUPPLY_ATTR(CHARGE_FULL),
@@ -298,14 +315,44 @@ static ssize_t power_supply_show_property(struct device *dev,
 	case POWER_SUPPLY_PROP_USB_TYPE:
 		ret = power_supply_show_usb_type(dev, psy->desc,
 						&value, buf);
+		printk("%s: usb type[%s]-->function name = %s,  \n", __func__, buf, ps_attr->attr_name);
 		break;
 	case POWER_SUPPLY_PROP_MODEL_NAME ... POWER_SUPPLY_PROP_SERIAL_NUMBER:
 		ret = sprintf(buf, "%s\n", value.strval);
+		printk("%s: function[%s]-->%s\n", __func__, ps_attr->attr_name, value.strval);
 		break;
 	default:
-		ret = sprintf(buf, "%d\n", value.intval);
-	}
+		#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+		if((psp == POWER_SUPPLY_PROP_CURRENT_NOW) && (qti_battery_get_battery_type()==0)){
+			value.intval *= -1;
+		}
+		/*used for judge in charge or not*/
+		if(psp == POWER_SUPPLY_PROP_CURRENT_NOW)
+			charge_current = value.intval;
 
+		if(psp == POWER_SUPPLY_PROP_ONLINE)
+			charger_online = value.intval;
+
+		if(POWER_SUPPLY_PROP_CAPACITY == psp)
+			battery_soc = value.intval;
+		/*if not in bypass charge, and then to check usb online or not, if online and the current is > 0mA
+		  so, we think it's stop charge issue, beside the soc is 100%
+		*/
+		if((!charge_bypass_flag) && (charger_online==1) && (charge_current > 0) && (POWER_SUPPLY_PROP_CAPACITY ==psp) && (battery_soc < 99)) {	
+			current_count++;// to check ten time
+			if(current_count > 10){
+				current_count = 0;
+				printk("%s: charge_bypass_flag = %d\n", __func__, charge_bypass_flag);
+				nubia_set_charger(set_en_charger);
+				msleep(1000);
+				nubia_set_charger(set_disenable_charger);
+			}
+			printk("%s: charge_bypass_flag = %d, charge_current=%d, charger_online=%d, psp=%d, current_count=%d\n", __func__, charge_bypass_flag, charge_current, charger_online, psp, current_count);
+		}
+		#endif
+		ret = sprintf(buf, "%d\n", value.intval);
+		printk("%s: function[%s]-->%d\n", __func__, ps_attr->attr_name, value.intval);
+	}
 	return ret;
 }
 

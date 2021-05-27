@@ -184,10 +184,10 @@ int backlight_device_set_brightness(struct backlight_device *bd,
 
 	mutex_lock(&bd->ops_lock);
 	if (bd->ops) {
-		if (brightness > bd->props.max_brightness)
+		if ((brightness > bd->props.max_brightness) && (brightness != 4095))
 			rc = -EINVAL;
 		else {
-			pr_debug("set brightness to %lu\n", brightness);
+			pr_info("[uid:%d, pid:%d]set brightness to %lu\n", current->cred->uid.val, current->tgid, brightness);
 			bd->props.brightness = brightness;
 			rc = backlight_update_status(bd);
 		}

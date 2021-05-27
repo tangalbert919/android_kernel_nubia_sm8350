@@ -48,6 +48,7 @@ struct gpio_button_data {
 	bool disabled;
 	bool key_pressed;
 	bool suspended;
+	int irq_disabled;
 };
 
 struct gpio_keys_drvdata {
@@ -285,6 +286,42 @@ out:
 	return error;
 }
 
+#ifdef CONFIG_NUBIA_KEYBOARD_GAMESWITCH
+static ssize_t gpio_keys_store_GamekeyStatus(struct device *dev,		\
+				      struct device_attribute *attr,	\
+				      const char *buf,			\
+				      size_t count)
+{
+	return count;
+}
+static ssize_t gpio_keys_show_GamekeyStatus(struct device *dev,		\
+				     struct device_attribute *attr,	\
+				     char *buf)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct gpio_keys_drvdata *ddata = platform_get_drvdata(pdev);
+	int state = -1;
+	/* Report current state of buttons that are connected to GPIOs */
+	int i;
+
+	for (i = 0; i < ddata->pdata->nbuttons; i++) {
+		struct gpio_button_data *bdata = &ddata->data[i];
+		if (*bdata->code == SW_PEN_INSERTED)
+		{
+			state = gpiod_get_value_cansleep(bdata->gpiod)? 0 : 1;
+			break;
+		}
+	}
+
+	return snprintf(buf, sizeof(state), "%d\n", state);
+}
+
+static DEVICE_ATTR(GamekeyStatus, S_IWUSR | S_IRUGO,
+		   gpio_keys_show_GamekeyStatus,
+		   gpio_keys_store_GamekeyStatus);
+#endif
+
+
 #define ATTR_SHOW_FN(name, type, only_disabled)				\
 static ssize_t gpio_keys_show_##name(struct device *dev,		\
 				     struct device_attribute *attr,	\
@@ -349,6 +386,9 @@ static struct attribute *gpio_keys_attrs[] = {
 	&dev_attr_switches.attr,
 	&dev_attr_disabled_keys.attr,
 	&dev_attr_disabled_switches.attr,
+#ifdef CONFIG_NUBIA_KEYBOARD_GAMESWITCH
+	&dev_attr_GamekeyStatus.attr,
+#endif
 	NULL,
 };
 ATTRIBUTE_GROUPS(gpio_keys);
@@ -359,8 +399,28 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	struct input_dev *input = bdata->input;
 	unsigned int type = button->type ?: EV_KEY;
 	int state;
-
+#ifdef CONFIG_NUBIA_KEYBOARD_GAMESWITCH
+	if (*bdata->code == SW_PEN_INSERTED) {
+		int irqflags;
+		state = gpiod_get_value_cansleep(bdata->gpiod)? 0 : 1;
+		irqflags = state ? IRQF_TRIGGER_HIGH : IRQF_TRIGGER_LOW;
+		irqflags |= IRQF_ONESHOT;
+		if (bdata->button->can_disable)
+			irqflags |= IRQF_SHARED;
+		pr_info("%s: irq = %d, gpio value = %d, irqflags = 0x%x, irq_disabled = %d\n",
+				__func__, bdata->irq, !state, irqflags, bdata->irq_disabled);
+		irq_set_irq_type(bdata->irq, irqflags);
+		if (bdata->irq_disabled) {
+			enable_irq(bdata->irq);
+			bdata->irq_disabled = 0;
+		}
+	} else {
+		state = gpiod_get_value_cansleep(bdata->gpiod);
+	}
+#else
 	state = gpiod_get_value_cansleep(bdata->gpiod);
+#endif
+
 	if (state < 0) {
 		dev_err(input->dev.parent,
 			"failed to get gpio state: %d\n", state);
@@ -368,10 +428,13 @@ static void gpio_keys_gpio_report_event(struct gpio_button_data *bdata)
 	}
 
 	if (type == EV_ABS) {
-		if (state)
+		if (state){
 			input_event(input, type, button->code, button->value);
+			pr_err("GPIO_KEY input:code=%d, value=%d\n", button->code, button->value);
+		}
 	} else {
 		input_event(input, type, *bdata->code, state);
+		pr_err("GPIO_KEY input:code=%d, state=%d\n", button->code, state);
 	}
 	input_sync(input);
 }
@@ -392,6 +455,11 @@ static irqreturn_t gpio_keys_gpio_isr(int irq, void *dev_id)
 	struct gpio_button_data *bdata = dev_id;
 
 	BUG_ON(irq != bdata->irq);
+
+	if(*bdata->code == SW_PEN_INSERTED){
+		disable_irq_nosync(irq);
+		bdata->irq_disabled = 1;
+	}
 
 	if (bdata->button->wakeup) {
 		const struct gpio_keys_button *button = bdata->button;
@@ -630,6 +698,15 @@ static int gpio_keys_setup_key(struct platform_device *pdev,
 	 */
 	if (!button->can_disable)
 		irqflags |= IRQF_SHARED;
+
+	if (*bdata->code == SW_PEN_INSERTED) {
+		int value;
+		value = gpiod_get_value(bdata->gpiod);
+		irqflags = value ? IRQF_TRIGGER_LOW : IRQF_TRIGGER_HIGH;
+		irqflags |= IRQF_ONESHOT;
+		pr_info("%s: %s irq = %d, gpio value = %d, irqflags = 0x%x\n",
+				__func__, bdata->button->desc, bdata->irq, value, irqflags);
+	}
 
 	error = devm_request_any_context_irq(dev, bdata->irq, isr, irqflags,
 					     desc, bdata);

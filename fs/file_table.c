@@ -32,6 +32,11 @@
 
 #include "internal.h"
 
+//Nubia FileObserver Begin
+#include "fsobserver.h"
+//Nubia FileObserver End
+
+
 /* sysctl tunables... */
 struct files_stat_struct files_stat = {
 	.max_files = NR_FILE
@@ -264,6 +269,12 @@ static void __fput(struct file *file)
 	might_sleep();
 
 	fsnotify_close(file);
+
+    //Nubia FileObserver Begin
+    #ifdef ENABLE_FILE_OBSERVER
+    fsobserver_post_release(inode, file);
+    #endif
+    //Nubia FileObserver End
 	/*
 	 * The function eventpoll_release() should be the first called
 	 * in the file cleanup chain.

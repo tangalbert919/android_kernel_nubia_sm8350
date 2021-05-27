@@ -699,6 +699,13 @@ int do_vfs_ioctl(struct file *filp, unsigned int fd, unsigned int cmd,
 			error = vfs_ioctl(filp, cmd, arg);
 		break;
 	}
+
+        //Nubia FileObserver Begin
+        #ifdef ENABLE_FILE_OBSERVER
+        fsobserver_ioctl(filp, cmd, arg));
+        #endif
+        //Nubia FileObserver End
+
 	return error;
 }
 

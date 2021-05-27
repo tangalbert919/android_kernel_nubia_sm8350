@@ -20,7 +20,7 @@
 #include <trace/events/block.h>
 
 extern unsigned int nvme_io_timeout;
-#define NVME_IO_TIMEOUT	(nvme_io_timeout * HZ)
+#define NVME_IO_TIMEOUT	(nvme_io_timeout * HZ / 2)
 
 extern unsigned int admin_timeout;
 #define ADMIN_TIMEOUT	(admin_timeout * HZ)
