@@ -1,5 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+<<<<<<< HEAD
 /* Copyright (c) 2020, The Linux Foundation. All rights reserved. */
+=======
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved. */
+>>>>>>> f11dd7e239ad (second: add sound that ignored first time)
 #ifndef __DT_BINDINGS_QCOM_GPR_H
 #define __DT_BINDINGS_QCOM_GPR_H
 
