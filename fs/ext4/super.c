@@ -4834,6 +4834,10 @@ static void ext4_init_journal_params(struct super_block *sb, journal_t *journal)
 		journal->j_flags |= JBD2_BARRIER;
 	else
 		journal->j_flags &= ~JBD2_BARRIER;
+#ifdef CONFIG_BLK_DEV_NVME
+	//+linx for has ssd, improve ssd random write perf
+	journal->j_flags &= ~JBD2_BARRIER;
+#endif
 	if (test_opt(sb, DATA_ERR_ABORT))
 		journal->j_flags |= JBD2_ABORT_ON_SYNCDATA_ERR;
 	else

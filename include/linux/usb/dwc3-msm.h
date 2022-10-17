@@ -133,6 +133,7 @@ bool msm_dwc3_reset_ep_after_lpm(struct usb_gadget *gadget);
 int msm_dwc3_reset_dbm_ep(struct usb_ep *ep);
 int dwc3_msm_release_ss_lane(struct device *dev, bool usb_dp_concurrent_mode);
 bool usb_get_remote_wakeup_status(struct usb_gadget *gadget);
+void get_usb_state(int *state);
 #else
 static inline struct usb_ep *usb_ep_autoconfig_by_name(
 		struct usb_gadget *gadget, struct usb_endpoint_descriptor *desc,
@@ -162,6 +163,8 @@ static inline int dwc3_msm_release_ss_lane(struct device *dev, bool usb_dp_concu
 { return -ENODEV; }
 static bool __maybe_unused usb_get_remote_wakeup_status(struct usb_gadget *gadget)
 { return false; }
+static inline void get_usb_state(int *state)
+{ }
 #endif
 
 #if IS_ENABLED(CONFIG_USB_F_GSI)

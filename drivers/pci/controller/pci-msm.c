@@ -6145,6 +6145,11 @@ static int msm_pcie_probe(struct platform_device *pdev)
 
 	of_property_read_u32(of_node, "qcom,boot-option",
 				&pcie_dev->boot_option);
+    //+linx enum ssd when boot. dts param qcom,boot-option can't transfer to here?
+    if(1 == rc_idx){
+        pcie_dev->boot_option = MSM_PCIE_NO_WAKE_ENUMERATION;
+    }
+    //-linx
 	PCIE_DBG(pcie_dev, "PCIe: RC%d boot option is 0x%x.\n",
 		pcie_dev->rc_idx, pcie_dev->boot_option);
 

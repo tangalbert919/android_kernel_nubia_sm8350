@@ -3449,6 +3449,12 @@ static const struct file_operations clk_enabled_list_fops = {
 
 static u32 debug_suspend;
 
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+void nubia_clock_print_enabled(int enable){
+	debug_suspend = enable;
+}
+EXPORT_SYMBOL(nubia_clock_print_enabled);
+#endif
 /*
  * Print the names of all enabled clocks and their parents if
  * debug_suspend is set from debugfs.

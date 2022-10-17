@@ -1,0 +1,9 @@
+#
+# ZTE SoC drivers
+#
+
+config NBLOG
+	bool "NUBIA LOG MODULES"
+	default n
+	help
+	  this function for big data; these logs are send to data service, and then to analyze.

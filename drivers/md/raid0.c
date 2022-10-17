@@ -19,7 +19,8 @@
 #include "raid0.h"
 #include "raid5.h"
 
-static int default_layout = 0;
+//static int default_layout = 0;
+static int default_layout = RAID0_ALT_MULTIZONE_LAYOUT; //+linx
 module_param(default_layout, int, 0644);
 
 #define UNSUPPORTED_MDDEV_FLAGS		\

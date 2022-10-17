@@ -42,6 +42,10 @@ unsigned int pm_wakeup_irq __read_mostly;
 /* If greater than 0 and the system is suspending, terminate the suspend. */
 static atomic_t pm_abort_suspend __read_mostly;
 
+#ifdef CONFIG_ZTEMT_POWER_DEBUG
+extern bool wakeup_wake_lock_debug;
+#endif
+
 /*
  * Combined counters of registered wakeup events and wakeup events in progress.
  * They need to be modified together atomically, so it's better to use one
@@ -569,6 +573,13 @@ static void wakeup_source_report_event(struct wakeup_source *ws, bool hard)
 	if (events_check_enabled)
 		ws->wakeup_count++;
 
+	#ifdef CONFIG_ZTEMT_POWER_DEBUG
+	if (wakeup_wake_lock_debug){
+	    wakeup_wake_lock_debug = false;
+	    printk("[pmdb] First wakeup lock:%s\n", ws->name);
+	}
+	#endif //CONFIG_ZTEMT_POWER_DEBUG
+
 	if (!ws->active)
 		wakeup_source_activate(ws);
 
@@ -948,7 +959,7 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 				name = desc->action->name;
 
 			log_irq_wakeup_reason(irq_number);
-			pr_warn("%s: %d triggered %s\n", __func__,
+			pr_info("[pmdb] %s: %d triggered %s\n", __func__,
 					irq_number, name);
 
 		}
@@ -1047,6 +1058,33 @@ void pm_wakep_autosleep_enabled(bool set)
 	srcu_read_unlock(&wakeup_srcu, srcuidx);
 }
 #endif /* CONFIG_PM_AUTOSLEEP */
+
+static struct dentry *wakeup_sources_stats_dentry;
+
+#ifdef CONFIG_ZTEMT_POWER_DEBUG
+void global_print_active_locks_debug(struct wakeup_source *ws)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&ws->lock, flags);
+
+	if (ws->active) {
+		pr_err("[pmdb] active wake lock : %s,active_count:%lu,total_time:%lld,max_time:%lld\n", ws->name,ws->active_count,ktime_to_ms(ws->total_time),ktime_to_ms(ws->max_time));
+	}
+	spin_unlock_irqrestore(&ws->lock, flags);
+}
+
+void global_print_active_locks(void *unused)
+{
+	struct wakeup_source *ws;
+	int srcuidx;
+	srcuidx = srcu_read_lock(&wakeup_srcu);
+	list_for_each_entry_rcu(ws, &wakeup_sources, entry)
+		global_print_active_locks_debug(ws);
+	srcu_read_unlock(&wakeup_srcu, srcuidx);
+
+}
+#endif //CONFIG_ZTEMT_POWER_DEBUG
 
 /**
  * print_wakeup_source_stats - Print wakeup source statistics information.
@@ -1180,7 +1218,7 @@ static const struct file_operations wakeup_sources_stats_fops = {
 
 static int __init wakeup_sources_debugfs_init(void)
 {
-	debugfs_create_file("wakeup_sources", S_IRUGO, NULL, NULL,
+	wakeup_sources_stats_dentry = debugfs_create_file("wakeup_sources", S_IRUGO, NULL, NULL,
 			    &wakeup_sources_stats_fops);
 	return 0;
 }

@@ -297,6 +297,10 @@ static int pm8xxx_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alarm)
 
 	alarm->enabled = !!(ctrl_reg & PM8xxx_RTC_ALARM_ENABLE);
 
+    #ifdef CONFIG_ZTEMT_POWER_DEBUG
+    pr_info("[pmdb] Alarm set for - h:m:s=%ptRt, y-m-d=%ptRdr\n",
+		&alarm->time, &alarm->time);
+    #endif
 	dev_dbg(dev, "Alarm set for - h:m:s=%ptRt, y-m-d=%ptRdr\n",
 		&alarm->time, &alarm->time);
 
@@ -486,6 +490,17 @@ static const struct of_device_id pm8xxx_id_table[] = {
 };
 MODULE_DEVICE_TABLE(of, pm8xxx_id_table);
 
+<<<<<<< HEAD
+=======
+
+#ifdef CONFIG_ZTEMT_POWER_DEBUG
+static time_t rtc_suspend_sec = 0;
+static time_t rtc_resume_sec = 0;
+static unsigned long all_sleep_time = 0;
+static unsigned long all_wake_time = 0;
+#endif
+
+>>>>>>> bb98672f2897 (first commit)
 static int pm8xxx_rtc_probe(struct platform_device *pdev)
 {
 	int rc;
@@ -510,8 +525,15 @@ static int pm8xxx_rtc_probe(struct platform_device *pdev)
 	}
 
 	rtc_dd->rtc_alarm_irq = platform_get_irq(pdev, 0);
+<<<<<<< HEAD
 	if (rtc_dd->rtc_alarm_irq < 0)
 		return -ENXIO;
+=======
+	if (rtc_dd->rtc_alarm_irq < 0) {
+		dev_err(&pdev->dev, "Alarm IRQ resource absent!\n");
+		return -ENXIO;
+	}
+>>>>>>> bb98672f2897 (first commit)
 
 	rtc_dd->allow_set_time = of_property_read_bool(pdev->dev.of_node,
 						      "allow-set-time");
@@ -557,21 +579,69 @@ static int pm8xxx_rtc_probe(struct platform_device *pdev)
 #ifdef CONFIG_PM_SLEEP
 static int pm8xxx_rtc_resume(struct device *dev)
 {
+<<<<<<< HEAD
+=======
+    #ifdef CONFIG_ZTEMT_POWER_DEBUG
+    int rc, diff=0;
+	struct rtc_time tm;
+	unsigned long now;
+    #endif
+
+>>>>>>> bb98672f2897 (first commit)
 	struct pm8xxx_rtc *rtc_dd = dev_get_drvdata(dev);
 
 	if (device_may_wakeup(dev))
 		disable_irq_wake(rtc_dd->rtc_alarm_irq);
 
+<<<<<<< HEAD
+=======
+
+    #ifdef CONFIG_ZTEMT_POWER_DEBUG
+	rc = pm8xxx_rtc_read_time(dev,&tm);
+    if (rc) {
+	  pr_info("[pmdb] %s: Unable to read from RTC\n", __func__);
+	}
+	rtc_tm_to_time(&tm, &now);
+	rtc_resume_sec = now;
+	diff = rtc_resume_sec - rtc_suspend_sec;
+	all_sleep_time += diff;
+	pr_info("[pmdb] I have sleep %d seconds all_sleep_time %lu seconds\n",diff,all_sleep_time);
+	#endif
+>>>>>>> bb98672f2897 (first commit)
 	return 0;
 }
 
 static int pm8xxx_rtc_suspend(struct device *dev)
 {
+<<<<<<< HEAD
+=======
+	#ifdef CONFIG_ZTEMT_POWER_DEBUG
+	int rc, diff=0;
+	struct rtc_time tm;
+	unsigned long now;
+	#endif
+
+>>>>>>> bb98672f2897 (first commit)
 	struct pm8xxx_rtc *rtc_dd = dev_get_drvdata(dev);
 
 	if (device_may_wakeup(dev))
 		enable_irq_wake(rtc_dd->rtc_alarm_irq);
 
+<<<<<<< HEAD
+=======
+    #ifdef CONFIG_ZTEMT_POWER_DEBUG
+	rc = pm8xxx_rtc_read_time(dev,&tm);
+    if(rc) {
+	  pr_info("[pmdb] %s: Unable to read from RTC\n", __func__);
+	}
+	rtc_tm_to_time(&tm, &now);
+	rtc_suspend_sec = now;
+	diff = rtc_suspend_sec - rtc_resume_sec;
+	all_wake_time += diff;
+	pr_info("[pmdb] I have work %d seconds all_wake_time %lu seconds\n",diff,all_wake_time);
+	#endif
+
+>>>>>>> bb98672f2897 (first commit)
 	return 0;
 }
 #endif

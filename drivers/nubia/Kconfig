@@ -1,0 +1,111 @@
+#
+# Nubia drivers configuration
+#
+
+#menuconfig NUBIA_DRIVERS
+menu "nubia drivers"
+
+config NUBIA_DRIVERS
+	tristate "NUBIA DRIVERS"
+	default n
+	help
+	  Say Y here if you want to enable NUBIA DRIVERS
+	  If unsure, say N.
+
+comment "Nubia Device Drivers"
+
+if NUBIA_DRIVERS
+
+
+config NUBIA_TOUCH
+	bool "NUBIA_TOUCH"
+	default n
+	help
+	 Say Y here if you have enable NUBIA_FINGERPRINT
+	 IF  unsure ,say N
+
+config NUBIA_EC_COLOR
+    bool "NUBIA_EC_COLOR"
+    default n
+    help
+     Say Y here if you have enable NUBIA_EC_COLOR
+     IF  unsure ,say N
+
+config NUBIA_SENSORS
+        bool "NUBIA_SENSORS"
+        default n
+        help
+         Say Y here if you have enable NUBIA_SENSORS
+         IF  unsure ,say N
+
+config NUBIA_FINGERPRINT
+        tristate "NUBIA_FINGERPRINT"
+        default n
+        help
+         Say Y here if you have enable NUBIA_FINGERPRINT
+         IF  unsure ,say N
+
+config NUBIA_DP
+        bool "NUBIA_DP"
+        default n
+        help
+         Say Y here if you have enable NUBIA_DP
+         IF  unsure ,say N
+
+config NUBIA_LOG
+        bool "NUBIA_LOG"
+        default n
+        help
+         Say Y here if you have enable NUBIA_LOG
+         IF  unsure ,say N
+
+config NUBIA_SENSORS_SENS
+        bool "NUBIA_SENSORS_SENS"
+        default n
+        help
+         Say Y here if you have enable NUBIA_SENSORS_SENS
+         IF  unsure ,say N
+
+endif
+
+
+if NUBIA_TOUCH
+source "drivers/nubia/touch/Kconfig"
+endif
+
+
+if NUBIA_FINGERPRINT
+source "drivers/nubia/fingerprint/Kconfig"
+endif
+
+if NUBIA_DP
+source "drivers/nubia/dp/Kconfig"
+endif
+
+if NUBIA_SENSORS
+source "drivers/nubia/stk3337/Kconfig"
+endif
+
+if NUBIA_SENSORS_SENS
+source "drivers/nubia/sensors_sensitivity/Kconfig"
+endif
+
+config NUBIA_BYPASS_ACL
+    bool "NUBIA_BYPASS_ACL"
+    default n
+    help
+     Say Y here if you have enable NUBIA_BYPASS_ACL
+     IF  unsure ,say N
+
+config PS5013
+    bool "PS5013"
+    default n
+    help
+     Say Y here if you have enable PS5013
+     IF  unsure ,say N
+
+if NUBIA_LOG
+source "drivers/nubia/nblog/Kconfig"
+endif
+endmenu
+

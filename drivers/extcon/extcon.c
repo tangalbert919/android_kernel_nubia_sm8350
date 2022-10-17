@@ -471,10 +471,11 @@ int extcon_sync(struct extcon_dev *edev, unsigned int id)
 	envp[env_offset] = NULL;
 
 	/* Unlock early before uevent */
+	printk("%s,%d dp_audio_debug env[name] = %s, env[state] = %s\n", __func__, __LINE__, envp[0], envp[1]);
 	spin_unlock_irqrestore(&edev->lock, flags);
 	kobject_uevent_env(&edev->dev.kobj, KOBJ_CHANGE, envp);
 	free_page((unsigned long)prop_buf);
-
+	printk("%s,%d dp_audio_debug \n", __func__, __LINE__);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(extcon_sync);
@@ -593,7 +594,7 @@ int extcon_set_state_sync(struct extcon_dev *edev, unsigned int id, bool state)
 	ret = extcon_set_state(edev, id, state);
 	if (ret < 0)
 		return ret;
-
+	printk("%s,%d dp_audio_debug \n", __func__, __LINE__);
 	return extcon_sync(edev, id);
 }
 EXPORT_SYMBOL_GPL(extcon_set_state_sync);

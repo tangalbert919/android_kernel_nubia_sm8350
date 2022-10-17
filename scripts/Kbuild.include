@@ -183,7 +183,8 @@ echo-cmd = $(if $($(quiet)cmd_$(1)),\
 	echo '  $(call escsq,$($(quiet)cmd_$(1)))$(echo-why)';)
 
 # printing commands
-cmd = @set -e; $(echo-cmd) $(cmd_$(1))
+#cmd = @set -e; $(echo-cmd) $(cmd_$(1)) #nubia del set cmd for ubuntu 20.04 build error
+cmd = $(echo-cmd) $(cmd_$(1))
 
 ###
 # if_changed      - execute command if any prerequisite is newer than

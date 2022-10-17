@@ -208,6 +208,12 @@ struct fuse_file {
 
 	} readdir;
 
+	/**
+	  * Reference to lower filesystem file for read/write operations
+	  * handled in pass-through mode
+	  */
+	struct file *passthrough_filp;
+
 	/** RB node to be linked on fuse_conn->polled_files */
 	struct rb_node polled_node;
 
@@ -252,6 +258,7 @@ struct fuse_args {
 	bool may_block:1;
 	struct fuse_in_arg in_args[3];
 	struct fuse_arg out_args[2];
+	struct file *passthrough_filp;
 	void (*end)(struct fuse_conn *fc, struct fuse_args *args, int error);
 
 	/* Path used for completing d_canonical_path */
@@ -355,6 +362,9 @@ struct fuse_req {
 	struct {
 		struct fuse_out_header h;
 	} out;
+
+	/** Lower filesystem file pointer used in pass-through mode */
+	struct file *passthrough_filp;
 
 	/** Used to wake up the task waiting for completion of request*/
 	wait_queue_head_t waitq;
@@ -722,6 +732,9 @@ struct fuse_conn {
 
 	/* Do not show mount options */
 	unsigned int no_mount_options:1;
+
+	/** Pass-through mode for read/write IO */
+	unsigned int passthrough:1;
 
 	/** The number of requests waiting for completion */
 	atomic_t num_waiting;
@@ -1095,5 +1108,10 @@ unsigned int fuse_len_args(unsigned int numargs, struct fuse_arg *args);
  */
 u64 fuse_get_unique(struct fuse_iqueue *fiq);
 void fuse_free_conn(struct fuse_conn *fc);
+
+void fuse_setup_passthrough(struct fuse_conn *fc, struct fuse_req *req);
+ssize_t fuse_passthrough_read_iter(struct kiocb *iocb, struct iov_iter *to);
+ssize_t fuse_passthrough_write_iter(struct kiocb *iocb, struct iov_iter *from);
+void fuse_passthrough_release(struct fuse_file *ff);
 
 #endif /* _FS_FUSE_I_H */

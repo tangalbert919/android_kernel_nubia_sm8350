@@ -1,0 +1,1 @@
+cmd_scripts/kconfig/conf := /home/nubia/shenzx/NX669J/NX669S/vendor/prebuilts/clang/host/linux-x86/clang-r383902b1/bin/clang   -o scripts/kconfig/conf scripts/kconfig/conf.o scripts/kconfig/confdata.o scripts/kconfig/expr.o scripts/kconfig/lexer.lex.o scripts/kconfig/parser.tab.o scripts/kconfig/preprocess.o scripts/kconfig/symbol.o   

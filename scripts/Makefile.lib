@@ -185,6 +185,18 @@ DTC_INCLUDE    := $(srctree)/scripts/dtc/include-prefixes
 dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
 		 $(addprefix -I,$(DTC_INCLUDE))                          \
 		 -undef -D__DTS__
+ 
+#nubia: Set nubia overwrite dtsi file
+$(warning PRODUCT_BUILD_NX669J_S = $(PRODUCT_BUILD_NX669J_S))
+ifeq ($(PRODUCT_BUILD_NX669J_S),true)
+dtc_cpp_flags += -DNUBIA_OVERWRITE_DTSI_FILE=\"../nubia/NX669S/head.dtsi\"
+else
+ifeq ($(PRODUCT_BUILD_NX669J_N),true)
+dtc_cpp_flags += -DNUBIA_OVERWRITE_DTSI_FILE=\"../nubia/NX669N/head.dtsi\"
+else
+dtc_cpp_flags += -DNUBIA_OVERWRITE_DTSI_FILE=\"../nubia/$(NUBIA_TARGET_PRODUCT)/head.dtsi\"
+endif
+endif
 
 # Useful for describing the dependency of composite objects
 # Usage:

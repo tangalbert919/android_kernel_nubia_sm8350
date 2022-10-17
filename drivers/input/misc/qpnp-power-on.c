@@ -1028,7 +1028,7 @@ static int qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 		return -EINVAL;
 	}
 
-	pr_debug("PMIC input: code=%d, status=0x%02X\n", cfg->key_code,
+	pr_err("PMIC input: code=%d, status=0x%02X\n", cfg->key_code,
 		pon_rt_sts);
 	key_status = pon_rt_sts & pon_rt_bit;
 
@@ -2438,11 +2438,18 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 		dev_err(dev, "Unable to read debounce delay, rc=%d\n", rc);
 		return rc;
 	}
-
+#ifdef CONFIG_NUBIA_ADD_POWERKEY_DEBOUNCE
+	if(!pon->dbc_time_us)
+	{
 	rc = qpnp_pon_get_dbc(pon, &pon->dbc_time_us);
 	if (rc)
 		return rc;
-
+	}
+#else
+	rc = qpnp_pon_get_dbc(pon, &pon->dbc_time_us);
+        if (rc)
+                return rc;
+#endif
 	pon->kpdpwr_dbc_enable = of_property_read_bool(dev->of_node,
 						"qcom,kpdpwr-sw-debounce");
 

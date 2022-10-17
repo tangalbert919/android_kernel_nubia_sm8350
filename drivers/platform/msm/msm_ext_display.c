@@ -194,7 +194,7 @@ static int msm_ext_disp_process_audio(struct msm_ext_disp *ext_disp,
 		pr_debug("same state\n");
 		goto end;
 	}
-
+	printk("%s,%d dp_audio_debug \n", __func__, __LINE__);
 	ret = extcon_set_state_sync(audio_sdev,
 			codec->type, !!new_state);
 	if (ret)
@@ -317,8 +317,11 @@ static int msm_ext_disp_audio_notify(struct platform_device *pdev,
 		goto end;
 	}
 
+	printk("%s,%d dp_audio_debug 1\n", __func__, __LINE__);
 	mutex_lock(&ext_disp->lock);
+	printk("%s,%d dp_audio_debug 2\n", __func__, __LINE__);
 	ret = msm_ext_disp_process_audio(ext_disp, codec, state);
+	printk("%s,%d dp_audio_debug 3\n", __func__, __LINE__);
 	mutex_unlock(&ext_disp->lock);
 end:
 	return ret;
