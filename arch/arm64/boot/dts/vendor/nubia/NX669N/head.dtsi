@@ -1,0 +1,14 @@
+/*
+ * nubia overwrite dts
+ */
+#include "TP.dtsi"
+#include "others.dtsi"
+#include "haptic.dtsi"
+#include "sensors.dtsi"
+#include "fan.dtsi"
+#include "aw22xxx.dtsi"
+#include "nfc.dtsi"
+#include "usb.dtsi"
+#include "camera.dtsi"
+/*#include "ese.dtsi"*/
+#include "lahaina-mtp-cnss-pro.dtsi"
