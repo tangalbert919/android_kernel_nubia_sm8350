@@ -1,0 +1,10 @@
+&qupv3_se14_spi {
+  status = "okay";
+  nubia-ese@0 {
+    compatible = "nubia,ese-spi";
+    reg = <0x0>;
+//    spi-cs-gpio = <&tlmm 59 0>;
+    spi-max-frequency = <5000000>;
+    //spi-cs-high = <1>;
+  };
+};

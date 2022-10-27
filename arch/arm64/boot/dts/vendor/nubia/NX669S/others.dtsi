@@ -1,0 +1,334 @@
+/*
+ * nubia overwrite dts
+ */
+&pm8350c_pwm_1 {
+	qcom,lut-patterns = <0 2 5 8 10 13 15 17 20 23 25 27 30 32 35 37 40 43 45 47 50 47 45 43 40 37 35 32 30 27 25 23 20 17 15 13 10 8 5 2 0>;
+
+	lpg@1 {
+		qcom,ramp-step-ms = <50>;
+		qcom,ramp-high-index = <40>;
+		qcom,ramp-from-low-to-high;
+		qcom,ramp-pause-hi-count = <2>;
+		qcom,ramp-pause-lo-count = <2>;
+	};
+
+	lpg@2 {
+		qcom,ramp-step-ms = <50>;
+		qcom,ramp-high-index = <40>;
+		qcom,ramp-from-low-to-high;
+		qcom,ramp-pause-hi-count = <2>;
+		qcom,ramp-pause-lo-count = <2>;
+	};
+
+	lpg@3 {
+		qcom,ramp-step-ms = <50>;
+		qcom,ramp-high-index = <40>;
+		qcom,ramp-from-low-to-high;
+		qcom,ramp-pause-hi-count = <2>;
+		qcom,ramp-pause-lo-count = <2>;
+	};
+};
+
+&tlmm {
+	key_game_sw_default: key_game_sw_default {
+		mux {
+		     pins = "gpio131";
+		     function = "gpio";
+		};
+		config {
+		     pins = "gpio131";
+		     drive-strength = <6>;
+		     bias-pull-up;
+		};
+	};
+};
+&soc {
+    gpio_keys {
+        pinctrl-0 = <&key_game_sw_default>;
+        game_sw {
+            label = "game_sw";
+            gpios = <&tlmm 131 0>;
+            linux,input-type = <5>;
+            linux,code = <0x0f>;
+            debounce-interval = <15>;
+            gpio-key,wakeup;
+        };
+    };
+};
+&qupv3_se6_i2c {
+	status = "ok";
+	cypress_touchkey@10 {
+		status = "ok";
+		compatible = "cypress,touchkey-i2c";
+		reg = <0x10>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <13 0x2002>;
+		touchkey,irq-gpio = <&tlmm 13 0x2002>;
+		//touchkey,power-gpio = <&tlmm 12 0x00>;
+		//touchkey,power1-gpio = <&tlmm 103 0x00>;
+		touchkey,power1-gpio = <&tlmm 12 0x00>;
+		touchkey,power-on-flag = <1>;
+		touchkey,avdd-supply = <&pm8350c_l9>;
+		regulator-names = "avdd";
+		touchkey,irq-on-state = <0>;
+		touchkey,irq-flags = <0x2002>;  //IRQF_ONESHOT | IRQF_TRIGGER_FALLING
+		pinctrl-names = "cypress_int_active", "cypress_int_suspend";
+		pinctrl-0 = <&cypress_int_active>;
+		pinctrl-1 = <&cypress_int_suspend>;
+	};
+};
+&qupv3_se10_i2c {
+	status = "ok";
+	cypress_touchkey@10 {
+		status = "ok";
+		compatible = "cypress,touchkey_left-i2c";
+		reg = <0x10>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <176 0x2002>;
+		touchkey,irq-gpio = <&tlmm 176 0x2002>;
+		//touchkey,power-gpio = <&tlmm 12 0x00>;
+		//touchkey,power1-gpio = <&tlmm 66 0x00>;
+		touchkey,power1-gpio = <&tlmm 66 0x00>;
+		touchkey,power-on-flag = <1>;
+		touchkey,avdd-supply = <&pm8350c_l9>;
+		regulator-names = "avdd";
+		touchkey,irq-on-state = <0>;
+		touchkey,irq-flags = <0x2002>;  //IRQF_ONESHOT | IRQF_TRIGGER_FALLING
+		pinctrl-names = "cypress_int_active_left", "cypress_int_suspend_left";
+		pinctrl-0 = <&cypress_int_active_left>;
+		pinctrl-1 = <&cypress_int_suspend_left>;
+	};
+};
+&qupv3_se8_i2c {
+	    status = "ok";
+		aw9610x_sar@13 {
+		compatible = "awinic,aw9610x_sar_0";
+		reg = <0x13>;
+		interrupt-parent = < &tlmm >;
+		interrupts = <30 0>;
+		irq-gpio = <&tlmm 30 0>;
+		pinctrl-names = "aw_default_sar0", "aw_int_output_low_sar0", "aw_int_output_high_sar0";
+		pinctrl-0 = <&aw_int_default_sar0>;
+		pinctrl-1 = <&aw_int_output_low_sar0>;
+		pinctrl-2 = <&aw_int_output_high_sar0>;
+		sar-num = < 0 >;
+		channel-func = <0x3f>;
+		chip_name = "AW96105";
+		aw9610x,using-firmware;
+		status = "okay";
+	};
+};
+
+&tlmm {
+	cypress_int_active: cypress_int_active {
+		mux {
+			pins = "gpio13";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio13";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+	};
+	cypress_int_suspend: cypress_int_suspend {
+		mux {
+			pins = "gpio13";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio13";
+			drive-strength = <6>;
+			bias-disable;
+		};
+
+	};
+	
+	cypress_int_active_left: cypress_int_active_left {
+		mux {
+			pins = "gpio176";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio176";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+	};
+	cypress_int_suspend_left: cypress_int_suspend_left {
+		mux {
+			pins = "gpio176";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio176";
+			drive-strength = <6>;
+			bias-disable;
+		};
+
+	};
+	 aw_int_default_sar0: aw_int_default_sar0 {
+
+       mux {
+           pins = "gpio30";
+           function = "gpio";
+       };
+      config {
+           pins = "gpio30";
+           output-disable;
+       };
+    };
+    aw_int_output_low_sar0: aw_int_output_low_sar0 {
+       mux {
+           pins = "gpio30";
+           function = "gpio";
+       };
+     config {
+          pins = "gpio30";
+          drive-strength = <6>;
+          bias-pull-down;
+       };
+    };
+    aw_int_output_high_sar0: aw_int_output_high_sar0{
+      mux {
+          pins = "gpio30";
+          function = "gpio";
+       };
+    config {
+         pins = "gpio30";
+         drive-strength = <6>;
+         bias-pull-up;
+       };
+    };
+
+};
+
+&pmk8350{
+        pon_hlos@1300{
+		qcom,pon-dbc-delay = <15625>;
+                qcom,kpdpwr-sw-debounce;
+        };
+};
+&wdog {
+        qcom,bark-time = <20000>;
+        qcom,pet-time = <15000>;
+};
+&soc {
+        nubia_hw_ver_gpio: nubia_hw_gpio_ctrl {
+                compatible = "nubia_hw_gpio_ctrl";
+                qcom,pcb-gpio1 = <&tlmm 120 0x00>;
+                qcom,pcb-gpio2 = <&tlmm 121 0x00>;
+                qcom,pcb-gpio3 = <&tlmm 122 0x00>;
+                qcom,pcb-gpio4 = <&tlmm 7 0x00>;
+                qcom,rf-gpio1 = <&tlmm 120 0x00>;
+                qcom,rf-gpio2 = <&tlmm 121 0x00>;
+                qcom,config-gpio1 = <&tlmm 120 0x00>;
+                qcom,config-gpio2 = <&tlmm 121 0x00>;
+                pinctrl-names = "pull_up_default","pull_down_default";
+                pinctrl-0 = <&nubia_gpio_default>;
+                pinctrl-1 = <&nubia_gpio_pulldown>;
+        };
+        keyreset {
+        compatible = "nubia,keyreset";
+        keys-down = <0x73 0x72>;
+        keys-up = <0x73 0x72>;
+        keyreset-need-panic;
+        key_down_delay = <20>;
+    };
+
+};
+&tlmm {
+
+        nubia_gpio {
+                nubia_gpio_default: nubia_gpio_default {
+                        mux {
+                                pins = "gpio120", "gpio121","gpio122","gpio7";
+                                function = "gpio";
+                        };
+                        config {
+                                pins = "gpio120", "gpio121","gpio122","gpio7";
+                                driver-strength = <2>; /* 2mA */
+                                bias-pull-up;
+                                input-enable;
+                        };
+                };
+
+                nubia_gpio_pulldown: nubia_gpio_pulldown {
+                        mux {
+                                pins = "gpio120", "gpio121","gpio122","gpio7";
+                                function = "gpio";
+                        };
+                        config {
+                                pins = "gpio120", "gpio121","gpio122","gpio7";
+                                driver-strength = <2>; /* 2mA */
+                                bias-pull-down;
+                                input-enable;
+                        };
+                };
+        };
+
+	battery_type_gpio_default: battery_type_gpio_default {
+                mux {
+                        pins = "gpio6";
+                        function = "gpio";
+                };
+                config {
+                        pins = "gpio6";
+                        driver-strength = <2>; /* 2mA */
+                        bias-pull-up;
+                        input-enable;
+                };
+        };
+
+	battery_type_gpio_pulldown: nubia_gpio_pulldown {
+                mux {
+                        pins = "gpio6";
+                        function = "gpio";
+                };
+                config {
+                        pins = "gpio6";
+                        driver-strength = <2>; /* 2mA */
+                        bias-pull-down;
+                        input-enable;
+                };
+	};
+};
+
+&soc {
+        nubia_usb_switch_dp_gpio: nubia_usb_switch_dp_gpio_ctrl {
+                compatible = "nubia,usb_switch_dp";
+                qcom,switch-en-gpio = <&tlmm 14 0x00>;
+                qcom,switch-en-flag = <1>;
+                qcom,switch-mode-gpio = <&tlmm 116 0x00>;
+                qcom,switch-mode-flag = <0>;
+        };
+};
+
+&battery_charger{
+	qcom,battery-type-gpio = <&tlmm 6 0x00>;
+	pinctrl-names = "battery_gpio_default","battery_gpio_pulldown";
+    pinctrl-0 = <&battery_type_gpio_default>;
+    pinctrl-1 = <&battery_type_gpio_pulldown>;
+};
+&reserved_memory {
+        ramoops@fff00000{
+                compatible = "ramoops";
+                reg = <0x0 0xfff00000 0x0 0x100000>;
+
+                record-size = <0x20000>;
+                console-size = <0x20000>;
+                ftrace-size = <0x20000>;
+                };
+};
+
+/* +linx for ssd */
+&pcie1 {
+	qcom,boot-option = <0x2>;
+	qcom,wr-halt-size = <0x0>;
+};
