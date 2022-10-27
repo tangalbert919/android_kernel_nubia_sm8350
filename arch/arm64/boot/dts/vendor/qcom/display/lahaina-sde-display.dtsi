@@ -145,8 +145,269 @@
 };
 
 &mdss_mdp {
-	connectors = <&smmu_sde_unsec &smmu_sde_sec &sde_dp &sde_wb &sde_dsi
-		&sde_dsi1 &sde_rscc>;
+	connectors = <&sde_dp &smmu_sde_unsec &smmu_sde_sec &sde_wb &sde_dsi &sde_rscc>;
+};
+
+&dsi_nubia_nt37701_amoled_cmd_cphy {
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [
+		06 01 00 01 05 00 01 0D
+		06 01 00 01 05 00 01 54
+		06 01 00 01 05 00 01 0A
+		06 01 00 01 05 00 01 91
+		06 01 00 01 05 00 01 03
+		06 01 00 01 05 00 01 FA];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x00 0x20 0x9c
+		0xab 0x2a 0x00 0x14 0xc2 0x00 0x02 0xb0 0x03 0x2a 0x00 0x15 0x05 0x0e 0x03 0x1d 0x0c 0xf0
+		0x01 0x00 0x00 0x01  0x00 0x00 0x00 0x00  0x00 0x04 0x00 0x00 0x0e 0x00 0x00 0x00>;
+	qcom,mdss-dsi-panel-status-read-length = <1 1 1 18 1 15>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1F 19
+				04 19 04 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@1 { /* 60Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1E 14
+				03 19 03 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@2 { /* 120Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 21 1D
+				06 19 07 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@3 { /* 144Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nubia_nt37701_amoled_cmd_cphy_b0 {
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [
+		06 01 00 01 05 00 01 0D
+		06 01 00 01 05 00 01 54
+		06 01 00 01 05 00 01 0A
+		06 01 00 01 05 00 01 91
+		06 01 00 01 05 00 01 03
+		06 01 00 01 05 00 01 FA];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x00 0x20 0x9c
+		0xab 0x2a 0x00 0x14 0xc2 0x00 0x02 0xb0 0x03 0x2a 0x00 0x15 0x05 0x0e 0x03 0x1d 0x0c 0xf0
+		0x01 0x00 0x00 0x01  0x00 0x00 0x00 0x00  0x00 0x04 0x00 0x00 0x0e 0x00 0x00 0x00>;
+	qcom,mdss-dsi-panel-status-read-length = <1 1 1 18 1 15>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1F 19
+				04 19 04 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@1 { /* 60Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1E 14
+				03 19 03 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@2 { /* 120Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 21 1D
+				06 19 07 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@3 { /* 144Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nubia_nt37800a_amoled_cmd_cphy {
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [
+		06 01 00 01 05 00 01 0D
+		06 01 00 01 05 00 01 54
+		06 01 00 01 05 00 01 0A
+		06 01 00 01 05 00 01 91
+		06 01 00 01 05 00 01 03];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x00 0x20 0x9c
+		0xAB 0x2A 0x00 0x28 0xC2 0x00 0x01 0xD8 0x04 0xA3 0x00 0x0A 0x02 0x77 0x03 0x1D 0x0C 0xF0
+		0x01>;
+	qcom,mdss-dsi-panel-status-read-length = <1 1 1 18 1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1F 19
+				04 19 04 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@1 { /* 60Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1E 14
+				03 19 03 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@2 { /* 120Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 21 1D
+				06 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@3 { /* 144Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@4 { /* 165Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nubia_nt37800a_amoled_cmd_cphy_b6 {
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [
+		06 01 00 01 05 00 01 0D
+		06 01 00 01 05 00 01 54
+		06 01 00 01 05 00 01 0A
+		06 01 00 01 05 00 01 91
+		06 01 00 01 05 00 01 03];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x00 0x20 0x9c
+		0xAB 0x2A 0x00 0x28 0xC2 0x00 0x01 0xD8 0x04 0xA3 0x00 0x0A 0x02 0x77 0x03 0x1D 0x0C 0xF0
+		0x01>;
+	qcom,mdss-dsi-panel-status-read-length = <1 1 1 18 1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1F 19
+				04 19 04 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@1 { /* 60Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1E 14
+				03 19 03 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@2 { /* 120Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 21 1D
+				06 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@3 { /* 144Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@4 { /* 165Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 22 21
+				07 19 07 02 04 00 00 00];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nubia_r6130_amoled_cmd_dphy {
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [
+		06 01 00 01 05 00 01 68
+		06 01 00 01 05 00 01 0A];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x00 0x00 0x9c>;
+	qcom,mdss-dsi-panel-status-read-length = <2 1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 11 04 04 12 1E
+				04 04 03 02 04 00 0F 09];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@1 { /* 60Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 0C 03 03 10 1D
+				03 03 02 02 04 00 0B 08];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@2 { /* 120Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 15 05 05 14 13
+				05 05 06 02 04 00 13 0A];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@3 { /* 144Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 19 06 06 15 14
+				06 06 07 02 04 00 16 0B];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+		timing@4 { /* 165Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 1B 07 06 16 15
+				07 07 07 02 04 00 17 0B];
+			qcom,display-topology = <2 2 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nubia_r66451_amoled_cmd_cphy {
+	//qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 05 00 01 0a
+		06 01 00 01 05 00 01 f9
+		06 01 00 01 05 00 01 f8];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
+	qcom,mdss-dsi-panel-status-value = <0x1c 0x00 0x11 0x00 0x00 0x89 0x30 0x80 0x09 0x24 0x04 0x38>;
+        qcom,mdss-dsi-panel-status-read-length = <1 1 10>;
+	//qcom,dsi-supported-dfps-list = <60 55 48>;
+	//qcom,mdss-dsi-pan-enable-dynamic-fps;
+	//qcom,mdss-dsi-pan-fps-update = "dfps_immediate_porch_mode_vfp";
+	//qcom,mdss-dsi-min-refresh-rate = <48>;
+	//qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
+			"cphy_byte_clk0", "cphy_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 { /* 90Hz */
+			qcom,mdss-dsi-panel-phy-timings = [00 00 00 00 1E 17
+				03 19 03 02 04 00 00 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+	};
 };
 
 &dsi_sw43404_amoled_cmd {

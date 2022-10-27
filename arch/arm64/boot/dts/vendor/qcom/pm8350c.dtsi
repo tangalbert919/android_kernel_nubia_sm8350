@@ -136,7 +136,7 @@
 				qcom,max-current-ma = <1500>;
 				qcom,default-led-trigger = "flash0_trigger";
 				qcom,id = <0>;
-				qcom,duration-ms = <1280>;
+				qcom,duration-ms = <500>;//modified by kangxiong for camera
 				qcom,ires-ua = <12500>;
 			};
 
@@ -146,7 +146,7 @@
 				qcom,max-current-ma = <1500>;
 				qcom,default-led-trigger = "flash1_trigger";
 				qcom,id = <1>;
-				qcom,duration-ms = <1280>;
+				qcom,duration-ms = <500>;//modified by kangxiong for camera
 				qcom,ires-ua = <12500>;
 			};
 
@@ -156,7 +156,7 @@
 				qcom,max-current-ma = <1500>;
 				qcom,default-led-trigger = "flash2_trigger";
 				qcom,id = <2>;
-				qcom,duration-ms = <1280>;
+				qcom,duration-ms = <500>;//modified by kangxiong for camera
 				qcom,ires-ua = <12500>;
 			};
 
@@ -166,7 +166,7 @@
 				qcom,max-current-ma = <1500>;
 				qcom,default-led-trigger = "flash3_trigger";
 				qcom,id = <3>;
-				qcom,duration-ms = <1280>;
+				qcom,duration-ms = <500>;//modified by kangxiong for camera
 				qcom,ires-ua = <12500>;
 			};
 

@@ -1,6 +1,5 @@
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
-
 #include "pm6125.dtsi"
 #include "pmr735a.dtsi"
 

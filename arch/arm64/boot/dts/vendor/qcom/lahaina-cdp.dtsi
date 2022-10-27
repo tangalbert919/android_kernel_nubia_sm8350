@@ -59,6 +59,35 @@
 	status = "ok";
 	qcom,i2c-touch-active = "st,fts";
 
+	synaptics_dsx@20 {
+		compatible = "synaptics,dsx-i2c";
+		reg = <0x20>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <23 0x2008>;
+		//vdd-supply = <&pm8150_l14>;
+		//avdd-supply = <&pm8150_l13>;
+		pinctrl-names = "pmx_ts_active", "pmx_ts_suspend",
+				"pmx_ts_release";
+		pinctrl-0 = <&ts_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+		pinctrl-2 = <&ts_release>;
+		//synaptics,pwr-reg-name = "avdd";
+		synaptics,power1-gpio = <&tlmm 104 0x00>;
+		synaptics,power1-on-state = <1>;
+		//synaptics,bus-reg-name = "vdd";
+		synaptics,power-gpio = <&tlmm 103 0x00>;
+		synaptics,power-on-state = <1>;
+		synaptics,power-delay-ms = <200>;
+		synaptics,reset-active-ms = <20>;
+		synaptics,reset-delay-ms = <100>;
+		synaptics,ub-i2c-addr = <0x20>;
+		synaptics,irq-gpio = <&tlmm 23 0x2008>;
+		synaptics,reset-gpio = <&tlmm 22 0x0>;
+		synaptics,firmware-image-name = "nubia_tp_fw.img";
+		synaptics,irq-on-state = <0>;
+		synaptics,reset-on-state = <0>;
+	};
+
 	st_fts@49 {
 		compatible = "st,fts";
 		reg = <0x49>;

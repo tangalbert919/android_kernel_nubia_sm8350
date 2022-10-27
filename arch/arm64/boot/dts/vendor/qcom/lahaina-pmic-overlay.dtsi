@@ -52,6 +52,20 @@
 		};
 	};
 };
+//add for nubia smartfan
+&pm8350c_gpios {
+        fan_mcu_rst {
+                fan_mcu_rst_default: fan_mcu_rst_default {
+                        pins = "gpio6";
+                        function = "normal";
+                        input-disable;
+                        output-enable;
+                        output-low;
+                        power-source = <0>;     /* 1.8V */
+                };
+        };
+};
+//end nubia smartfan
 
 &qupv3_se13_i2c {
 	#address-cells = <1>;
@@ -171,8 +185,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&pm8008j_active>;
+		/*pinctrl-names = "default";
+		pinctrl-0 = <&pm8008j_active>;*/
 
 		pm8008-chip@900 {
 			compatible = "qcom,pm8008-chip";
@@ -210,8 +224,8 @@
 			L1J: pm8008j_l1: regulator@4000 {
 				reg = <0x4000>;
 				regulator-name = "pm8008j_l1";
-				regulator-min-microvolt = <944000>;
-				regulator-max-microvolt = <1152000>;
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
 				qcom,min-dropout-voltage = <100000>;
 				qcom,hpm-min-load = <0>;
 			};
@@ -220,7 +234,7 @@
 				reg = <0x4100>;
 				regulator-name = "pm8008j_l2";
 				regulator-min-microvolt = <944000>;
-				regulator-max-microvolt = <1056000>;
+				regulator-max-microvolt = <1200000>;
 				qcom,min-dropout-voltage = <225000>;
 				qcom,hpm-min-load = <0>;
 			};
@@ -496,7 +510,8 @@
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
-		thermal-sensors = <&pmk8350_adc_tm PM8350_ADC7_AMUX_THM1_100K_PU>;
+		//thermal-sensors = <&pmk8350_adc_tm PM8350_ADC7_AMUX_THM1_100K_PU>;
+		thermal-sensors = <&pmk8350_adc_tm PM8350_ADC7_AMUX_THM5_100K_PU>;
 		wake-capable-sensor;
 		trips {
 			active-config0 {

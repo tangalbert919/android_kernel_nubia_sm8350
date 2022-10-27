@@ -26,6 +26,12 @@
 #include "dsi-panel-sim-dualmipi-video.dtsi"
 #include "dsi-panel-sim-dualmipi-dsc375-cmd.dtsi"
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
+#include "dsi-panel-nt37701-nubia-dsc-fhd-cmd-cphy.dtsi"
+#include "dsi-panel-nt37701-nubia-dsc-fhd-cmd-cphy-b0.dtsi"
+#include "dsi-panel-nt37800a-nubia-dsc-fhd-cmd-cphy.dtsi"
+#include "dsi-panel-nt37800a-nubia-dsc-fhd-cmd-cphy-b6.dtsi"
+#include "dsi-panel-r6130-nubia-dsc-fhd-cmd-dphy.dtsi"
+#include "dsi_r66451_1080_2340_amoled_cmd.dtsi"
 #include <dt-bindings/clock/mdss-5nm-pll-clk.h>
 #include "dsi-panel-sim-vdc-vid.dtsi"
 #include "dsi-panel-sim-vdc-cmd.dtsi"
@@ -160,12 +166,12 @@
 	qcom,dsi-dyn-clk-list = <534712320 532484352 530256384>;
 	qcom,dsi-dyn-clk-type = "constant-fps-adjust-hfp";
 
-	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
-	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
-	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
-	qcom,mdss-dsi-panel-status-value = <0x9c>;
-	qcom,mdss-dsi-panel-status-read-length = <1>;
-	qcom,esd-check-enabled;
+	//qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	//qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	//qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	//qcom,mdss-dsi-panel-status-value = <0x9c>;
+	//qcom,mdss-dsi-panel-status-read-length = <1>;
+	//qcom,esd-check-enabled;
 
 	qcom,dsi-panel-gpio-address = <0x0F100000 0x1000>;
 	qcom,dsi-panel-gpio-pins = <12 24>;
