@@ -9,7 +9,7 @@
 #include "configfs.h"
 #include "u_f.h"
 #include "u_os_desc.h"
-
+#include <linux/usb/nubia_usb_debug.h>
 #ifdef CONFIG_USB_CONFIGFS_UEVENT
 #include <linux/platform_device.h>
 #include <linux/kdev_t.h>
@@ -288,9 +288,10 @@ static int unregister_gadget(struct gadget_info *gi)
 {
 	int ret;
 
-	if (!gi->composite.gadget_driver.udc_name)
+	if (!gi->composite.gadget_driver.udc_name){
+		NUBIA_USB_INFO("udc_name is null exit usb_gadget_unregister_driver flower.\n");
 		return -ENODEV;
-
+	}
 	gi->unbinding = true;
 	ret = usb_gadget_unregister_driver(&gi->composite.gadget_driver);
 	if (ret)
@@ -321,6 +322,7 @@ static ssize_t gadget_dev_desc_UDC_store(struct config_item *item,
 	mutex_lock(&gi->lock);
 
 	if (!strlen(name) || strcmp(name, "none") == 0) {
+		NUBIA_USB_INFO("the prop of sys.usb.config is none,unregister_gadget.\n");
 		ret = unregister_gadget(gi);
 		if (ret)
 			goto err;
@@ -330,6 +332,7 @@ static ssize_t gadget_dev_desc_UDC_store(struct config_item *item,
 			ret = -EBUSY;
 			goto err;
 		}
+		NUBIA_USB_INFO("probe driver the prop of sys.usb.config is %s.\n", *name);
 		gi->composite.gadget_driver.udc_name = name;
 		ret = usb_gadget_probe_driver(&gi->composite.gadget_driver);
 		if (ret) {
@@ -1596,6 +1599,7 @@ static int android_setup(struct usb_gadget *gadget,
 	spin_lock_irqsave(&cdev->lock, flags);
 	if (!gi->connected) {
 		gi->connected = 1;
+		NUBIA_USB_INFO("start usb connect notify.\n");
 		schedule_work(&gi->work);
 	}
 	spin_unlock_irqrestore(&cdev->lock, flags);
@@ -1618,6 +1622,7 @@ static int android_setup(struct usb_gadget *gadget,
 	spin_lock_irqsave(&cdev->lock, flags);
 	if (c->bRequest == USB_REQ_SET_CONFIGURATION &&
 						cdev->config) {
+		NUBIA_USB_INFO("start usb configuration notify.\n");
 		schedule_work(&gi->work);
 	}
 	spin_unlock_irqrestore(&cdev->lock, flags);

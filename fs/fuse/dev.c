@@ -510,6 +510,7 @@ ssize_t fuse_simple_request(struct fuse_conn *fc, struct fuse_args *args)
 		BUG_ON(args->out_numargs == 0);
 		ret = args->out_args[args->out_numargs - 1].size;
 	}
+    args->passthrough_filp = req->passthrough_filp;
 	fuse_put_request(fc, req);
 
 	return ret;
@@ -1936,6 +1937,7 @@ static ssize_t fuse_dev_do_write(struct fuse_dev *fud,
 		err = copy_out_args(cs, req->args, nbytes);
 	fuse_copy_finish(cs);
 
+    fuse_setup_passthrough(fc, req);
 	if (!err && req->in.h.opcode == FUSE_CANONICAL_PATH) {
 		char *path = (char *)req->args->out_args[0].value;
 		path[req->args->out_args[0].size - 1] = 0;

@@ -4875,8 +4875,11 @@ void ext4_set_inode_flags(struct inode *inode)
 		new_fl |= S_DIRSYNC;
 	if (ext4_should_use_dax(inode))
 		new_fl |= S_DAX;
+#ifndef CONFIG_BLK_DEV_NVME
+	//+linx for no ssd, improve ssd seq rw perf and fix random read bug(8000+MB/s)
 	if (flags & EXT4_ENCRYPT_FL)
 		new_fl |= S_ENCRYPTED;
+#endif
 	if (flags & EXT4_CASEFOLD_FL)
 		new_fl |= S_CASEFOLD;
 	if (flags & EXT4_VERITY_FL)

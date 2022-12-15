@@ -843,6 +843,8 @@ int f2fs_getattr(const struct path *path, struct kstat *stat,
 	return 0;
 }
 
+extern int not_nubia_rw_dir(struct inode *dir); //+linx
+
 #ifdef CONFIG_F2FS_FS_POSIX_ACL
 static void __setattr_copy(struct inode *inode, const struct iattr *attr)
 {
@@ -860,11 +862,17 @@ static void __setattr_copy(struct inode *inode, const struct iattr *attr)
 		inode->i_ctime = attr->ia_ctime;
 	if (ia_valid & ATTR_MODE) {
 		umode_t mode = attr->ia_mode;
+		struct dentry *dentry;
 
 		if (!in_group_p(inode->i_gid) &&
 			!capable_wrt_inode_uidgid(inode, CAP_FSETID))
 			mode &= ~S_ISGID;
+		//+linx:skip set_acl when "cp -a"
+		dentry = hlist_entry_safe(inode->i_dentry.first, typeof(struct dentry), d_u.d_alias);
+		if(not_nubia_rw_dir(dentry->d_parent->d_inode)){
+		//-linx
 		set_acl_inode(inode, mode);
+		}
 	}
 }
 #else

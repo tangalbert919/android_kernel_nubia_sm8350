@@ -1937,9 +1937,15 @@ static const struct msm_pingroup lahaina_groups[] = {
 	[206] = SDC_QDSD_PINGROUP(sdc2_data, 0x1cf000, 9, 0),
 };
 
+#ifdef CONFIG_NUBIA_ESE   //delete pinctrl used ese spi gpio
+static const int lahaina_reserved_gpios[] = {
+        52, 53, 54, 55, -1
+};
+#else
 static const int lahaina_reserved_gpios[] = {
 	52, 53, 54, 55, 56, 57, 58, 59, -1
 };
+#endif
 
 static struct pinctrl_qup lahaina_qup_regs[] = {
 	QUP_I3C(8, QUP_I3C_8_MODE_OFFSET),

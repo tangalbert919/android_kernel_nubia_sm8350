@@ -26,7 +26,7 @@
 #include "core.h"
 #include "gadget.h"
 #include "io.h"
-
+#include <linux/usb/nubia_usb_debug.h>
 #define DWC3_ALIGN_FRAME(d, n)	(((d)->frame_number + ((d)->interval * (n))) \
 					& ~((d)->interval - 1))
 
@@ -2349,6 +2349,7 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 	u32			reg, reg1;
 	u32			timeout = 1500;
 
+	NUBIA_USB_INFO("is_on = %d, suspend = %d.\n", is_on, suspend);
 	dbg_event(0xFF, "run_stop", is_on);
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
 	if (is_on) {
@@ -2520,6 +2521,7 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 	int			ret;
 	ktime_t			diff;
 
+	NUBIA_USB_INFO("is_on is %d.\n", is_on);
 	is_on = !!is_on;
 	spin_lock_irqsave(&dwc->lock, flags);
 	dwc->softconnect = is_on;
@@ -2698,9 +2700,10 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *_gadget, int is_active)
 	unsigned long flags;
 	int ret = 0;
 
-	if (dwc->dr_mode <= USB_DR_MODE_HOST)
+	if (dwc->dr_mode <= USB_DR_MODE_HOST){
+		NUBIA_USB_INFO("exit because of dwc->dr_mode < = USB_DR_MODE_HOST.\n");
 		return -EPERM;
-
+	}
 	is_active = !!is_active;
 
 	dbg_event(0xFF, "VbusSess", is_active);
@@ -3462,12 +3465,15 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 	dep = dwc->eps[epnum];
 
 	if (!(dep->flags & DWC3_EP_ENABLED)) {
-		if (!(dep->flags & DWC3_EP_TRANSFER_STARTED))
+		if (!(dep->flags & DWC3_EP_TRANSFER_STARTED)) {
+			NUBIA_USB_INFO("exit because DWC3_EP_TRANSFER_STARTED.\n");
 			return;
-
+		}
 		/* Handle only EPCMDCMPLT when EP disabled */
-		if (event->endpoint_event != DWC3_DEPEVT_EPCMDCMPLT)
+		if (event->endpoint_event != DWC3_DEPEVT_EPCMDCMPLT) {
+			NUBIA_USB_INFO("exit because DWC3_DEPEVT_EPCMDCMPLT.\n");
 			return;
+		}
 	}
 
 	if (epnum == 0 || epnum == 1) {
@@ -3540,6 +3546,7 @@ static void dwc3_disconnect_gadget(struct dwc3 *dwc)
 {
 	struct usb_gadget_driver *gadget_driver;
 
+	NUBIA_USB_INFO("entry disconnect notify.\n");
 	if (dwc->gadget_driver && dwc->gadget_driver->disconnect) {
 		gadget_driver = dwc->gadget_driver;
 		spin_unlock(&dwc->lock);
@@ -3754,6 +3761,7 @@ static void dwc3_gadget_reset_interrupt(struct dwc3 *dwc)
 	 * STAR#9000466709: RTL: Device : Disconnect event not
 	 * generated if setup packet pending in FIFO
 	 */
+	NUBIA_USB_INFO("dwc->revision is %02x.\n", dwc->revision);
 	if (dwc->revision < DWC3_REVISION_188A) {
 		if (dwc->setup_packet_pending)
 			dwc3_gadget_disconnect_interrupt(dwc);
@@ -4166,8 +4174,8 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
 			if (dwc->gadget.state >= USB_STATE_CONFIGURED)
 				dwc3_gadget_suspend_interrupt(dwc,
 						event->event_info);
-			else
-				usb_gadget_vbus_draw(&dwc->gadget, 2);
+			//else
+			//	usb_gadget_vbus_draw(&dwc->gadget, 2);
 		}
 		break;
 	case DWC3_DEVICE_EVENT_SOF:

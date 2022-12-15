@@ -91,6 +91,71 @@ static void __iomem *rpmh_unit_base;
 
 static DEFINE_MUTEX(rpmh_stats_mutex);
 
+#ifdef CONFIG_ZTEMT_POWER_DEBUG
+static uint32_t pre_count[12]; //size=rpmh_masters
+static uint32_t pre_apss_count;
+
+static void nubia_rpmh_master_stats_print_data(struct msm_rpmh_master_stats *record,
+				const char *name,uint32_t pre_val)
+{
+	uint64_t accumulated_duration = record->accumulated_duration;
+	/*
+	 * If a master is in sleep when reading the sleep stats from SMEM
+	 * adjust the accumulated sleep duration to show actual sleep time.
+	 * This ensures that the displayed stats are real when used for
+	 * the purpose of computing battery utilization.
+	 */
+	if (record->last_entered > record->last_exited)
+		accumulated_duration +=
+				(__arch_counter_get_cntvct()
+				- record->last_entered);
+
+	pr_err("[pmdb] %s diff:0x%x Count:0x%x;Entered:0x%llx;Exited:0x%llx;Duration:0x%llx \n",
+			name, record->counts-pre_val, record->counts,
+			record->last_entered, record->last_exited,
+			accumulated_duration);
+}
+
+void nubia_rpmh_master_stats_get(void)
+{
+
+	int i = 0;
+	struct msm_rpmh_master_stats *record = NULL;
+	bool skip_apss = false;
+
+	mutex_lock(&rpmh_stats_mutex);
+
+	/* First Read APSS master stats */
+
+	if (rpmh_unit_base) {
+		nubia_rpmh_master_stats_print_data(&apss_master_stats, "APSS",pre_apss_count);
+	    pre_apss_count = apss_master_stats.counts;
+		skip_apss = true;
+	}
+	/* Read SMEM data written by other masters */
+
+	for (i = 0; i < ARRAY_SIZE(rpmh_masters); i++) {
+		if (skip_apss && i == 0)
+			continue;
+
+		record = (struct msm_rpmh_master_stats *) qcom_smem_get(
+					rpmh_masters[i].pid,
+					rpmh_masters[i].smem_id, NULL);
+		if (!IS_ERR_OR_NULL(record)){
+			   nubia_rpmh_master_stats_print_data(record,rpmh_masters[i].master_name,pre_count[i]);
+			   pre_count[i]=record->counts;
+	    }
+
+	}
+
+	mutex_unlock(&rpmh_stats_mutex);
+
+
+}
+
+EXPORT_SYMBOL(nubia_rpmh_master_stats_get);
+#endif
+
 static ssize_t msm_rpmh_master_stats_print_data(char *prvbuf, ssize_t length,
 				struct msm_rpmh_master_stats *record,
 				const char *name)

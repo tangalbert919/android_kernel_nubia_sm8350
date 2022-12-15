@@ -1,0 +1,18 @@
+#
+# Near Field Communication (NFC) devices
+#
+
+menu "secure element (ESE) devices"
+
+
+config NUBIA_ESE
+	bool "Nubia ese driver"
+	default n
+	help
+	  NUBIA ESE Driver.
+	  This driver provides support for SAMSUNG(Thales) ESE products.
+
+	  Say Y here to compile support for NUBIA ese driver into the
+	  kernel.
+
+endmenu

@@ -62,6 +62,18 @@ static struct rtc_timer		rtctimer;
 static struct rtc_device	*rtcdev;
 static DEFINE_SPINLOCK(rtcdev_lock);
 
+//nubia add b
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+static int alarm_debug=0;
+static u32 debug_suspend;
+void nubia_alarm_print_enabled(int enable){
+	debug_suspend = enable;
+}
+EXPORT_SYMBOL(nubia_alarm_print_enabled);
+
+#endif
+//nubia add e
+
 /**
  * alarmtimer_get_rtcdev - Return selected rtcdevice
  *
@@ -171,6 +183,14 @@ static void alarmtimer_enqueue(struct alarm_base *base, struct alarm *alarm)
 	if (alarm->state & ALARMTIMER_STATE_ENQUEUED)
 		timerqueue_del(&base->timerqueue, &alarm->node);
 
+    //nubia add b
+    #if defined(CONFIG_ZTEMT_POWER_DEBUG)
+	if(debug_suspend){
+        pr_info("[pmdb]%s: comm:%s pid:%d exp:%llu func:%pf\n", __func__,current->comm, current->pid,
+            ktime_to_ms(alarm->node.expires), alarm->function);
+	}
+    #endif
+    //nubia add e
 	timerqueue_add(&base->timerqueue, &alarm->node);
 	alarm->state |= ALARMTIMER_STATE_ENQUEUED;
 }
@@ -215,6 +235,15 @@ static enum hrtimer_restart alarmtimer_fired(struct hrtimer *timer)
 	alarmtimer_dequeue(base, alarm);
 	spin_unlock_irqrestore(&base->lock, flags);
 
+//nubia add b
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+     if((alarm_debug & 0x1) && debug_suspend){
+         pr_info("[pmdb] %s:Handles alarm hrtimer being fired, type=%d, func=%pf, exp:%llu\n", __func__,
+                    alarm->type, alarm->function, ktime_to_ms(alarm->node.expires));
+         alarm_debug &= 0xFE;
+     }
+#endif
+//nubia add e
 	if (alarm->function)
 		restart = alarm->function(alarm, base->gettime());
 
@@ -255,6 +284,12 @@ static int alarmtimer_suspend(struct device *dev)
 	struct rtc_device *rtc;
 	unsigned long flags;
 	struct rtc_time tm;
+    //nubia add b
+    #if defined(CONFIG_ZTEMT_POWER_DEBUG)
+    struct alarm* min_timer = NULL;
+	struct rtc_time tm_set;
+    #endif
+    //nubia add e
 
 	spin_lock_irqsave(&freezer_delta_lock, flags);
 	min = freezer_delta;
@@ -281,6 +316,11 @@ static int alarmtimer_suspend(struct device *dev)
 			continue;
 		delta = ktime_sub(next->expires, base->gettime());
 		if (!min || (delta < min)) {
+            //nubia add b
+            #if defined(CONFIG_ZTEMT_POWER_DEBUG)
+             min_timer = container_of(next, struct alarm, node);
+            #endif
+            //nubia add e
 			expires = next->expires;
 			min = delta;
 			type = i;
@@ -289,6 +329,17 @@ static int alarmtimer_suspend(struct device *dev)
 	if (min == 0)
 		return 0;
 
+//nubia add b
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+     if (min_timer && debug_suspend){
+         pr_info("[pmdb]%s: [%p]type=%d, func=%pf, exp:%llu ms,min=%d ms\n", 
+		 	__func__,min_timer, min_timer->type, min_timer->function,
+            ktime_to_ms(min_timer->node.expires),ktime_to_ms(min));
+         min_timer = NULL;
+     }
+     alarm_debug = 0x1;
+     #endif
+    //nubia add e
 	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
 		__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);
 		return -EBUSY;
@@ -301,6 +352,17 @@ static int alarmtimer_suspend(struct device *dev)
 	rtc_read_time(rtc, &tm);
 	now = rtc_tm_to_ktime(tm);
 	now = ktime_add(now, min);
+
+//nubia add b
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+     if(debug_suspend > 0){
+       tm_set=rtc_ktime_to_tm(now);
+	   pr_info("[pmdb]%s utc time cur=%d:%d:%d,alarm=%d:%d:%d",__func__,
+	   	tm.tm_hour,tm.tm_min,tm.tm_sec,
+	   	tm_set.tm_hour,tm_set.tm_min,tm_set.tm_sec);
+	 }
+#endif
+//nubia add e
 
 	/* Set alarm, if in the past reject suspend briefly to handle */
 	ret = rtc_timer_start(rtc, &rtctimer, now, 0);

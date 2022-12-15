@@ -15,8 +15,28 @@
 #include <linux/power_supply.h>
 #include <linux/slab.h>
 #include <linux/stat.h>
-
+#include <linux/delay.h>
 #include "power_supply.h"
+
+#ifdef CONFIG_NBLOG
+
+#include "nblog/nblog.h"
+struct _power_supply_nblog_info{
+	int battery_soc;
+	int battery_voltage;
+	int battery_tempature;
+	int battery_health;
+	int charger_state;
+	int charger_current;
+	int full_charge;
+	int battery_charge_count;
+	int charger_type;
+};
+
+struct _power_supply_nblog_info power_supply_nblog_info;
+char *power_noblog_buf;
+
+#endif
 
 #define MAX_PROP_NAME_LEN 30
 
@@ -27,6 +47,23 @@ struct power_supply_attr {
 	const char * const *text_values;
 	int text_values_len;
 };
+
+#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+extern ssize_t nubia_set_charge_bypass(const char *buf);
+extern int inline qti_battery_get_battery_type(void);
+extern ssize_t nubia_set_charger(int value);
+
+u16 charge_bypass_flag = 0;
+int set_en_charger = 2;
+int set_disenable_charger= 3;
+int fix_bypass_count = 0;
+int charge_current = 0;
+int charger_online = 0;
+int current_count = 0;
+int battery_soc = 0;
+int battery_temp = 0;
+int battery_voltage = 0;
+#endif
 
 #define _POWER_SUPPLY_ATTR(_name, _text, _len)	\
 [POWER_SUPPLY_PROP_ ## _name] =			\
@@ -156,6 +193,9 @@ static struct power_supply_attr power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(CURRENT_BOOT),
 	POWER_SUPPLY_ATTR(POWER_NOW),
 	POWER_SUPPLY_ATTR(POWER_AVG),
+#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+	POWER_SUPPLY_ATTR(LCD_ON),
+#endif
 	POWER_SUPPLY_ATTR(CHARGE_FULL_DESIGN),
 	POWER_SUPPLY_ATTR(CHARGE_EMPTY_DESIGN),
 	POWER_SUPPLY_ATTR(CHARGE_FULL),
@@ -291,6 +331,12 @@ static ssize_t power_supply_show_property(struct device *dev,
 
 	if (ps_attr->text_values_len > 0 &&
 	    value.intval < ps_attr->text_values_len && value.intval >= 0) {
+#ifdef CONFIG_NBLOG
+		if(POWER_SUPPLY_PROP_HEALTH == psp)
+			power_supply_nblog_info.battery_health = value.intval;
+		if(POWER_SUPPLY_PROP_STATUS == psp)
+			power_supply_nblog_info.charger_state = value.intval;
+#endif
 		return sprintf(buf, "%s\n", ps_attr->text_values[value.intval]);
 	}
 
@@ -298,14 +344,118 @@ static ssize_t power_supply_show_property(struct device *dev,
 	case POWER_SUPPLY_PROP_USB_TYPE:
 		ret = power_supply_show_usb_type(dev, psy->desc,
 						&value, buf);
+		printk("%s: usb type[%s]-->function name = %s,  \n", __func__, buf, ps_attr->attr_name);
 		break;
 	case POWER_SUPPLY_PROP_MODEL_NAME ... POWER_SUPPLY_PROP_SERIAL_NUMBER:
 		ret = sprintf(buf, "%s\n", value.strval);
+		printk("%s: function[%s]-->%s\n", __func__, ps_attr->attr_name, value.strval);
 		break;
 	default:
+		#ifdef CONFIG_FEATURE_NUBIA_BATTERY_1S_2S
+		if((psp == POWER_SUPPLY_PROP_CURRENT_NOW) && (qti_battery_get_battery_type()==0)){
+			value.intval *= -1;
+		}
+		/*used for judge in charge or not*/
+		if(psp == POWER_SUPPLY_PROP_CURRENT_NOW)
+			charge_current = value.intval;
+
+		if(psp == POWER_SUPPLY_PROP_ONLINE)
+			charger_online = value.intval;
+
+		if(psp == POWER_SUPPLY_PROP_CAPACITY)
+			battery_soc = value.intval;
+		
+		if(psp == POWER_SUPPLY_PROP_TEMP)
+			battery_temp = (int)(value.intval/10);
+		
+		if(psp == POWER_SUPPLY_PROP_VOLTAGE_NOW)
+			battery_voltage = (int)(value.intval/1000);
+		/*if not in bypass charge, and then to check usb online or not, if online and the current is > 0mA
+		  so, we think it's stop charge issue, beside the soc is 100%, it is ok when battery temp > 55 stop charge
+		  no need nubia_set_charger, (battery_temp > 47)&&(battery_voltage > 8100) is also
+		*/
+		if((!charge_bypass_flag) && (charger_online==1) && (charge_current > 0) 
+			&& (POWER_SUPPLY_PROP_CAPACITY ==psp) && (battery_soc < 99)
+			&&(battery_temp < 55)&&(!((battery_temp > 47)&&(battery_voltage > 8100)))) {	
+			current_count++;// to check ten time
+			if(current_count > 10){
+				current_count = 0;
+				printk("%s: charge_bypass_flag = %d\n", __func__, charge_bypass_flag);
+				nubia_set_charger(set_en_charger);
+				msleep(1000);
+				nubia_set_charger(set_disenable_charger);
+				/**
+				**  fix no current or current just about 200mA when plugin pd
+				**/
+				fix_bypass_count++;
+				if(fix_bypass_count >= 5){
+					nubia_set_charger(1);
+					msleep(2000);
+					nubia_set_charger(0);
+					fix_bypass_count = 0;
+					printk("%s: fix no current or current just about 200mA when plugin pd \n", __func__);
+				}
+			}
+			printk("%s: charge_bypass_flag = %d, charge_current=%d, charger_online=%d, psp=%d, current_count=%d, battery_temp = %d, battery_voltage = %d\n", __func__, charge_bypass_flag, charge_current, charger_online, psp, current_count, battery_temp, battery_voltage);
+		}
+		#endif
 		ret = sprintf(buf, "%d\n", value.intval);
+		printk("%s: function[%s]-->%d\n", __func__, ps_attr->attr_name, value.intval);
 	}
 
+	/**
+	** if battery soc is different with last report soc,
+	** we will get power supply info and to report to nblog system
+	**/
+#ifdef CONFIG_NBLOG
+	switch(psp){
+		case POWER_SUPPLY_PROP_CURRENT_NOW:
+			power_supply_nblog_info.charger_current = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_USB_TYPE:
+			power_supply_nblog_info.charger_type = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_CHARGE_FULL:
+			power_supply_nblog_info.full_charge = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_STATUS:
+			power_supply_nblog_info.charger_state = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_HEALTH:
+			power_supply_nblog_info.battery_health = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_TEMP:
+			power_supply_nblog_info.battery_tempature = (value.intval + 5) / 10;
+			break;
+		case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+			power_supply_nblog_info.battery_voltage = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_CYCLE_COUNT:
+			power_supply_nblog_info.battery_charge_count = value.intval;
+			break;
+		case POWER_SUPPLY_PROP_CAPACITY:
+			if(power_supply_nblog_info.battery_soc != value.intval){
+				/*reduce report log, just soc arrived 100% and new soc is 99%, then to report log to big data for nubia*/
+				if((power_supply_nblog_info.battery_soc == 100) && (value.intval == 99)){
+					sprintf(power_noblog_buf, "%d, voltage=%d, temp=%d, health=%s, state=%s, current=%d, full_charge=%d, charge_count=%d, charge_type=%s",
+							power_supply_nblog_info.battery_soc, power_supply_nblog_info.battery_voltage,
+							power_supply_nblog_info.battery_tempature, POWER_SUPPLY_HEALTH_TEXT[power_supply_nblog_info.battery_health], POWER_SUPPLY_STATUS_TEXT[power_supply_nblog_info.charger_state],
+							power_supply_nblog_info.charger_current, power_supply_nblog_info.full_charge, power_supply_nblog_info.battery_charge_count, POWER_SUPPLY_USB_TYPE_TEXT[power_supply_nblog_info.charger_type]);
+					log_system_report_log(NUBIA_MODULE_CHARGE, "soc", power_noblog_buf, 0);
+
+					printk("soc=%d, voltage=%d, temp=%d, health=%s, state=%s, current=%d, full_charge=%d, charge_count=%d, charge_type=%s",
+							power_supply_nblog_info.battery_soc, power_supply_nblog_info.battery_voltage,
+							power_supply_nblog_info.battery_tempature, POWER_SUPPLY_HEALTH_TEXT[power_supply_nblog_info.battery_health], POWER_SUPPLY_STATUS_TEXT[power_supply_nblog_info.charger_state],
+							power_supply_nblog_info.charger_current, power_supply_nblog_info.full_charge, power_supply_nblog_info.battery_charge_count, POWER_SUPPLY_USB_TYPE_TEXT[power_supply_nblog_info.charger_type]);
+				}
+				power_supply_nblog_info.battery_soc = value.intval;
+			}
+			break;
+		default:
+			break;
+	}
+
+#endif
 	return ret;
 }
 
@@ -419,6 +569,12 @@ void power_supply_init_attrs(struct device_type *dev_type)
 		attr->store = power_supply_store_property;
 		__power_supply_attrs[i] = &attr->attr;
 	}
+	#ifdef CONFIG_NBLOG
+	power_noblog_buf = (char *)get_zeroed_page(GFP_KERNEL);
+	if (!power_noblog_buf){
+		pr_err("%s: get_zeroed_page for power_noblog_buf error \n", __func__);
+	}
+	#endif
 }
 
 static int add_prop_uevent(struct device *dev, struct kobj_uevent_env *env,

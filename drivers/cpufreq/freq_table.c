@@ -227,6 +227,24 @@ EXPORT_SYMBOL_GPL(cpufreq_frequency_table_get_index);
 /**
  * show_available_freqs - show available frequencies for the specified CPU
  */
+ //nubia b
+static ssize_t show_available_allfreqs(struct cpufreq_policy *policy, char *buf)
+{
+	ssize_t count = 0;
+	struct cpufreq_frequency_table *pos, *table = policy->freq_table;
+
+	if (!table)
+		return -ENODEV;
+
+	cpufreq_for_each_valid_entry(pos, table) {
+		count += sprintf(&buf[count], "%d ", pos->frequency);
+	}
+	count += sprintf(&buf[count], "\n");
+
+	return count;
+
+}
+//nubia e
 static ssize_t show_available_freqs(struct cpufreq_policy *policy, char *buf,
 				    bool show_boost)
 {
@@ -270,7 +288,10 @@ __ATTR_RO(_name##_frequencies)
 static ssize_t scaling_available_frequencies_show(struct cpufreq_policy *policy,
 						  char *buf)
 {
-	return show_available_freqs(policy, buf, false);
+	//nubia b
+	//return show_available_freqs(policy, buf, false);
+	return show_available_allfreqs(policy, buf);
+	//nubia e
 }
 cpufreq_attr_available_freq(scaling_available);
 EXPORT_SYMBOL_GPL(cpufreq_freq_attr_scaling_available_freqs);

@@ -24,6 +24,7 @@
 #include <linux/sched.h>
 #include <linux/smp.h>
 #include <linux/delay.h>
+#include <linux/io.h>
 
 /*
  * In case the boot CPU is hotpluggable, we record its initial state and
@@ -128,6 +129,8 @@ static int c_show(struct seq_file *m, void *v)
 {
 	int i, j;
 	bool compat = personality(current->personality) == PER_LINUX32;
+	void __iomem *jtag_feature_register;
+	unsigned int jtag_feature_id, jtag_id, feature_id;
 
 	for_each_online_cpu(i) {
 		struct cpuinfo_arm64 *cpuinfo = &per_cpu(cpu_data, i);
@@ -179,6 +182,20 @@ static int c_show(struct seq_file *m, void *v)
 		seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
 	}
 
+	/**
+	**	to identify qcom chip
+	**  ref: KBA-210623041657
+	**/
+	jtag_feature_register = ioremap(0x780178, 4);
+	jtag_feature_id = readl_relaxed(jtag_feature_register);
+	jtag_id = jtag_feature_id & 0xFFFFF;
+	feature_id = (jtag_feature_id>>20) & 0xFF;
+        iounmap(jtag_feature_register); //release memory.
+	//printk("%s: jtag_feature_id=0x%x, jtag_id=0x%x, feature_id=0x%x \n", __func__, jtag_feature_id, jtag_id, feature_id);
+	if(feature_id == 0x0F)
+		seq_printf(m, "Hardware\t: %s\n\n", "Qualcomm Technologies, Inc SM8350AC");
+	else
+		seq_printf(m, "Hardware\t: %s\n\n", "Qualcomm Technologies, Inc SM8350");
 	return 0;
 }
 

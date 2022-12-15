@@ -26,7 +26,7 @@
 #include "debug.h"
 #include "gadget.h"
 #include "io.h"
-
+#include <linux/usb/nubia_usb_debug.h>
 static void __dwc3_ep0_do_control_status(struct dwc3 *dwc, struct dwc3_ep *dep);
 static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
 		struct dwc3_ep *dep, struct dwc3_request *req);
@@ -826,6 +826,7 @@ static int dwc3_ep0_std_request(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 {
 	int ret;
 
+	NUBIA_USB_INFO("ctrl->bRequest = %d.\n", ctrl->bRequest);
 	switch (ctrl->bRequest) {
 	case USB_REQ_GET_STATUS:
 		ret = dwc3_ep0_handle_status(dwc, ctrl);
@@ -882,8 +883,10 @@ static void dwc3_ep0_inspect_setup(struct dwc3 *dwc,
 	dbg_setup(0x00, ctrl);
 	if ((ctrl->bRequestType & USB_TYPE_MASK) == USB_TYPE_STANDARD)
 		ret = dwc3_ep0_std_request(dwc, ctrl);
-	else
+	else {
+		NUBIA_USB_INFO("dwc3_ep0_delegate_req.\n");
 		ret = dwc3_ep0_delegate_req(dwc, ctrl);
+	}
 
 	if (ret == USB_GADGET_DELAYED_STATUS)
 		dwc->delayed_status = true;

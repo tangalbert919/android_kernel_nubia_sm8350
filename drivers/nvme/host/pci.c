@@ -27,6 +27,7 @@
 
 #include "trace.h"
 #include "nvme.h"
+#include "linux/msm_pcie.h"
 
 #define SQ_SIZE(q)	((q)->q_depth << (q)->sqes)
 #define CQ_SIZE(q)	((q)->q_depth * sizeof(struct nvme_completion))
@@ -2134,7 +2135,8 @@ static int nvme_setup_irqs(struct nvme_dev *dev, unsigned int nr_io_queues)
 		irq_queues = 1;
 
 	return pci_alloc_irq_vectors_affinity(pdev, 1, irq_queues,
-			      PCI_IRQ_ALL_TYPES | PCI_IRQ_AFFINITY, &affd);
+//			      PCI_IRQ_ALL_TYPES | PCI_IRQ_AFFINITY, &affd);
+			      PCI_IRQ_MSI, &affd); //+linx
 }
 
 static void nvme_disable_io_queues(struct nvme_dev *dev)
@@ -2383,7 +2385,8 @@ static int nvme_pci_enable(struct nvme_dev *dev)
 	 * interrupts. Pre-enable a single MSIX or MSI vec for setup. We'll
 	 * adjust this later.
 	 */
-	result = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
+	// result = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
+	result = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSI); //+linx
 	if (result < 0)
 		return result;
 
@@ -2422,6 +2425,7 @@ static int nvme_pci_enable(struct nvme_dev *dev)
                         "set queue depth=%u\n", dev->q_depth);
 	}
 
+	dev->q_depth = 64; //+linx
 	/*
 	 * Controllers with the shared tags quirk need the IO queue to be
 	 * big enough so that we get 32 tags for the admin queue
@@ -2899,6 +2903,11 @@ static int nvme_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	nvme_reset_ctrl(&dev->ctrl);
 	async_schedule(nvme_async_probe, dev);
+
+    //+linx fix ssd don't work after suspend
+	int ret = msm_pcie_pm_control(MSM_PCIE_DISABLE_PC, pdev->bus->number, pdev, NULL, 0);
+	printk(KERN_ERR "linx06:%s(),%d,msm_pcie_pm_control(MSM_PCIE_DISABLE_PC) ret=\n", __func__, __LINE__, ret);
+
 
 	return 0;
 

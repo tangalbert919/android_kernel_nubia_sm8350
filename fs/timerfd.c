@@ -48,6 +48,14 @@ struct timerfd_ctx {
 static LIST_HEAD(cancel_list);
 static DEFINE_SPINLOCK(cancel_lock);
 
+#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+static u32 debug_suspend;
+void nubia_timerfd_print_enabled(int enable){
+	debug_suspend = enable;
+}
+EXPORT_SYMBOL(nubia_timerfd_print_enabled);
+#endif
+
 static inline bool isalarm(struct timerfd_ctx *ctx)
 {
 	return ctx->clockid == CLOCK_REALTIME_ALARM ||
@@ -238,6 +246,14 @@ static __poll_t timerfd_poll(struct file *file, poll_table *wait)
 	spin_lock_irqsave(&ctx->wqh.lock, flags);
 	if (ctx->ticks)
 		events |= EPOLLIN;
+
+	//nubia add b
+	#if defined(CONFIG_ZTEMT_POWER_DEBUG)
+	if (ctx->expired && isalarm(ctx) && debug_suspend)
+	    pr_info("[pmdb]%s: comm:%s pid:%d exp:%llu ms\n", __func__,current->comm, current->pid,
+												   ktime_to_ms(ctx->t.alarm.node.expires));
+	#endif
+	//nubia add e
 	spin_unlock_irqrestore(&ctx->wqh.lock, flags);
 
 	return events;
