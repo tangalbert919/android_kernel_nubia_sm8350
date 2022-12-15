@@ -3,7 +3,7 @@
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
-
+#define DEBUG
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -483,7 +483,11 @@ static struct dev_config mi2s_rx_cfg[] = {
 };
 
 static struct dev_config mi2s_tx_cfg[] = {
+#ifdef CONFIG_SND_SOC_MAX98937
+	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
+#else
 	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+#endif
 	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
@@ -664,7 +668,8 @@ static struct dev_config cdc_dma_tx_cfg[] = {
 };
 
 static struct dev_config afe_loopback_tx_cfg[] = {
-	[AFE_LOOPBACK_TX_IDX] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	//[AFE_LOOPBACK_TX_IDX] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[AFE_LOOPBACK_TX_IDX] = {SAMPLING_RATE_16KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 };
 
 static int msm_vi_feed_tx_ch = 2;
@@ -934,19 +939,19 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime*);
 static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.read_fw_bin = false,
 	.calibration = NULL,
-	.detect_extn_cable = true,
+	.detect_extn_cable = false,
 	.mono_stero_detection = false,
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
-	.key_code[1] = KEY_VOICECOMMAND,
-	.key_code[2] = KEY_VOLUMEUP,
-	.key_code[3] = KEY_VOLUMEDOWN,
+	.key_code[1] = KEY_VOLUMEUP,
+	.key_code[2] = KEY_VOLUMEDOWN,
+	.key_code[3] = 0,
 	.key_code[4] = 0,
 	.key_code[5] = 0,
 	.key_code[6] = 0,
 	.key_code[7] = 0,
-	.linein_th = 5000,
+	.linein_th = 0,
 	.moisture_en = false,
 	.mbhc_micbias = MIC_BIAS_2,
 	.anc_micbias = MIC_BIAS_2,
@@ -5788,14 +5793,14 @@ static void *def_wcd_mbhc_cal(void)
 	btn_high = ((void *)&btn_cfg->_v_btn_low) +
 		(sizeof(btn_cfg->_v_btn_low[0]) * btn_cfg->num_btn);
 
-	btn_high[0] = 75;
-	btn_high[1] = 150;
-	btn_high[2] = 237;
-	btn_high[3] = 500;
-	btn_high[4] = 500;
-	btn_high[5] = 500;
-	btn_high[6] = 500;
-	btn_high[7] = 500;
+	btn_high[0] = 100;
+	btn_high[1] = 250;
+	btn_high[2] = 425;
+	btn_high[3] = 425;
+	btn_high[4] = 425;
+	btn_high[5] = 425;
+	btn_high[6] = 425;
+	btn_high[7] = 425;
 
 	return wcd_mbhc_cal;
 }
@@ -6230,6 +6235,19 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(tx3_cdcdma_hostless),
 	},
+#ifdef CONFIG_SND_SOC_MAX98937
+	{/* hw:x,32 */
+		.name = "TX4_CDC_DMA Hostless",
+		.stream_name = "TX4_CDC_DMA Hostless",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(tx4_cdcdma_hostless),
+	},
+#else
 	{/* hw:x,32 */
 		.name = "Tertiary MI2S TX_Hostless",
 		.stream_name = "Tertiary MI2S_TX Hostless Capture",
@@ -6242,6 +6260,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(tert_mi2s_tx_hostless),
 	},
+#endif
 };
 
 static struct snd_soc_dai_link msm_bolero_fe_dai_links[] = {
@@ -6398,7 +6417,34 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA10,
 		SND_SOC_DAILINK_REG(multimedia10),
 	},
+#ifdef CONFIG_SND_SOC_MAX98937
 	{/* hw:x,44 */
+		.name = "PRI_MI2S TX Hostless",
+		.stream_name = "PRI_MI2S_TX Hostless",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			    SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		SND_SOC_DAILINK_REG(pri_mi2s_tx_hostless),
+	},
+	{/* hw:x,45 */
+		.name = "PRI_MI2S Hostless",
+		.stream_name = "PRI_MI2S Hostless",
+		.dynamic = 1,
+		.dpcm_playback = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			        SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		SND_SOC_DAILINK_REG(pri_mi2s_rx_hostless),
+	},
+#endif
+
+	{/* hw:x,45 */
 		.name = "Secondary MI2S_TX Hostless",
 		.stream_name = "Secondary MI2S_TX Hostless Capture",
 		.dynamic = 1,
@@ -6411,7 +6457,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		SND_SOC_DAILINK_REG(sec_mi2s_tx_hostless),
 	},
 	/* DISP PORT Hostless */
-	{/* hw:x,45 */
+	{/* hw:x,46 */
 		.name = "DISPLAY_PORT_RX_HOSTLESS",
 		.stream_name = "DISPLAY_PORT_RX_HOSTLESS",
 		.dynamic = 1,
@@ -6423,6 +6469,7 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(display_port_hostless),
 	},
+
 };
 
 static struct snd_soc_dai_link msm_common_be_dai_links[] = {
@@ -8242,6 +8289,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	uint index = 0;
 	struct clk *lpass_audio_hw_vote = NULL;
 
+	dev_info(&pdev->dev, "%s: into machine driver\n",__func__);
+
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "%s: No platform supplied from device tree\n", __func__);
 		return -EINVAL;
@@ -8249,8 +8298,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	pdata = devm_kzalloc(&pdev->dev,
 			sizeof(struct msm_asoc_mach_data), GFP_KERNEL);
-	if (!pdata)
+	if (!pdata) {
+		dev_err(&pdev->dev, "%s: No mem for msm_asoc\n", __func__);
 		return -ENOMEM;
+	}
 
 	of_property_read_u32(pdev->dev.of_node,
 				"qcom,lito-is-v2-enabled",
@@ -8287,6 +8338,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	ret = msm_populate_dai_link_component_of_node(card);
 	if (ret) {
+		dev_err(&pdev->dev, "%s: dai_link failed \n", __func__);
 		ret = -EPROBE_DEFER;
 		goto err;
 	}
@@ -8303,11 +8355,13 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret == -EPROBE_DEFER) {
+		dev_err(&pdev->dev, "%s: snd_soc_register_card failed_1 (%d)\n",
+			__func__, ret);
 		if (codec_reg_done)
 			ret = -EINVAL;
 		goto err;
 	} else if (ret) {
-		dev_err(&pdev->dev, "%s: snd_soc_register_card failed (%d)\n",
+		dev_err(&pdev->dev, "%s: snd_soc_register_card failed_2 (%d)\n",
 			__func__, ret);
 		goto err;
 	}

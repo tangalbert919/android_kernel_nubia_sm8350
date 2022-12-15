@@ -44,8 +44,8 @@
 #define TX_MACRO_ADC_MUX_CFG_OFFSET 0x8
 #define TX_MACRO_ADC_MODE_CFG0_SHIFT 1
 
-#define TX_MACRO_DMIC_UNMUTE_DELAY_MS	40
-#define TX_MACRO_AMIC_UNMUTE_DELAY_MS	100
+#define TX_MACRO_DMIC_UNMUTE_DELAY_MS	374
+#define TX_MACRO_AMIC_UNMUTE_DELAY_MS	374
 #define TX_MACRO_DMIC_HPF_DELAY_MS	300
 #define TX_MACRO_AMIC_HPF_DELAY_MS	300
 
@@ -353,6 +353,9 @@ static int tx_macro_swr_pwr_event(struct snd_soc_dapm_widget *w,
 
 	dev_dbg(tx_dev, "%s: event = %d, lpi_enable = %d\n",
 		__func__, event, tx_priv->lpi_enable);
+
+	// if (!tx_priv->lpi_enable)
+		// return ret;
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:

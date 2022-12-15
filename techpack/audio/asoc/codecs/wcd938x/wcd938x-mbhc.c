@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  */
+#define DEBUG
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
@@ -1062,6 +1063,8 @@ int wcd938x_mbhc_init(struct wcd938x_mbhc **mbhc,
 	struct wcd_mbhc *wcd_mbhc = NULL;
 	int ret = 0;
 	struct wcd938x_pdata *pdata;
+
+	pr_err("%s: into\n", __func__);
 
 	if (!component) {
 		pr_err("%s: component is NULL\n", __func__);
