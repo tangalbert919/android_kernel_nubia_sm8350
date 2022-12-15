@@ -71,3 +71,5 @@ LINUXINCLUDE    += -include $(srctree)/techpack/display/config/sdxlemurdispconf.
 endif
 
 obj-$(CONFIG_DRM_QPIC_DISPLAY) += tinydrm/
+obj-$(CONFIG_NUBIA_DISP_PREFERENCE) += nubia/
+obj-$(CONFIG_NUBIA_HDMI_FEATURE) += nubiadp/

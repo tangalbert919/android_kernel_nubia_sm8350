@@ -11,9 +11,9 @@
 #include <linux/clk.h>
 #include <linux/clkdev.h>
 #include <linux/regmap.h>
-#include "clk-regmap.h"
-#include "clk-regmap-divider.h"
-#include "clk-regmap-mux.h"
+#include "../../../../drivers/clk/qcom/clk-regmap.h"
+#include "../../../../drivers/clk/qcom/clk-regmap-divider.h"
+#include "../../../../drivers/clk/qcom/clk-regmap-mux.h"
 #include "dsi_defs.h"
 
 #define DSI_PLL_DBG(p, fmt, ...)	DRM_DEV_DEBUG(NULL, "[msm-dsi-debug]: DSI_PLL_%d: "\

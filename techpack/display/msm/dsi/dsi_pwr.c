@@ -266,6 +266,133 @@ error:
 	return rc;
 }
 
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+/**
+ * nubia_dsi_pwr_enable_vreg() - enable/disable regulator
+ */
+static int nubia_dsi_pwr_enable_vreg(struct dsi_regulator_info *regs,
+												const char *reg_name,
+												bool enable)
+{
+	int rc = 0, i = 0;
+	struct dsi_vreg *vreg;
+	int num_of_v = 0;
+	u32 pre_on_ms, post_on_ms;
+	u32 pre_off_ms, post_off_ms;
+
+	if (enable) {
+		for (i = 0; i < regs->count; i++) {
+			vreg = &regs->vregs[i];
+			if (!strcmp(vreg->vreg_name, reg_name)) {
+				pre_on_ms = vreg->pre_on_sleep;
+				post_on_ms = vreg->post_on_sleep;
+
+				NUBIA_DEBUG("vreg: %s ++\n", vreg->vreg_name);
+				if (vreg->pre_on_sleep)
+					usleep_range((pre_on_ms * 1000),
+							(pre_on_ms * 1000) + 10);
+
+				rc = regulator_set_load(vreg->vreg,
+							vreg->enable_load);
+				if (rc < 0) {
+					DSI_ERR("Setting optimum mode failed for %s\n",
+					       vreg->vreg_name);
+					goto error;
+				}
+				num_of_v = regulator_count_voltages(vreg->vreg);
+				if (num_of_v > 0) {
+					rc = regulator_set_voltage(vreg->vreg,
+								   vreg->min_voltage,
+								   vreg->max_voltage);
+					if (rc) {
+						DSI_ERR("Set voltage(%s) fail, rc=%d\n",
+							 vreg->vreg_name, rc);
+						goto error_disable_opt_mode;
+					}
+				}
+
+				rc = regulator_enable(vreg->vreg);
+				if (rc) {
+					DSI_ERR("enable failed for %s, rc=%d\n",
+					       vreg->vreg_name, rc);
+					goto error_disable_voltage;
+				}
+
+				if (vreg->post_on_sleep)
+					usleep_range((post_on_ms * 1000),
+							(post_on_ms * 1000) + 10);
+			}
+		}
+	} else {
+		for (i = (regs->count - 1); i >= 0; i--) {
+			vreg = &regs->vregs[i];
+			if (!strcmp(vreg->vreg_name, reg_name)) {
+				pre_off_ms = vreg->pre_off_sleep;
+				post_off_ms = vreg->post_off_sleep;
+
+				NUBIA_DEBUG("vreg: %s -- \n", vreg->vreg_name);
+				if (pre_off_ms)
+					usleep_range((pre_off_ms * 1000),
+							(pre_off_ms * 1000) + 10);
+
+				(void)regulator_disable(regs->vregs[i].vreg);
+
+				if (post_off_ms)
+					usleep_range((post_off_ms * 1000),
+							(post_off_ms * 1000) + 10);
+
+				(void)regulator_set_load(regs->vregs[i].vreg,
+							regs->vregs[i].disable_load);
+
+				num_of_v = regulator_count_voltages(vreg->vreg);
+				if (num_of_v > 0)
+					(void)regulator_set_voltage(regs->vregs[i].vreg,
+							regs->vregs[i].off_min_voltage,
+							regs->vregs[i].max_voltage);
+
+			}
+		}
+	}
+
+	return 0;
+error_disable_opt_mode:
+	(void)regulator_set_load(regs->vregs[i].vreg,
+				 regs->vregs[i].disable_load);
+
+error_disable_voltage:
+	if (num_of_v > 0)
+		(void)regulator_set_voltage(regs->vregs[i].vreg,
+					    0, regs->vregs[i].max_voltage);
+error:
+	for (i--; i >= 0; i--) {
+		vreg = &regs->vregs[i];
+		pre_off_ms = vreg->pre_off_sleep;
+		post_off_ms = vreg->post_off_sleep;
+
+		if (pre_off_ms)
+			usleep_range((pre_off_ms * 1000),
+					(pre_off_ms * 1000) + 10);
+
+		(void)regulator_disable(regs->vregs[i].vreg);
+
+		if (post_off_ms)
+			usleep_range((post_off_ms * 1000),
+					(post_off_ms * 1000) + 10);
+
+		(void)regulator_set_load(regs->vregs[i].vreg,
+					 regs->vregs[i].disable_load);
+
+		num_of_v = regulator_count_voltages(regs->vregs[i].vreg);
+		if (num_of_v > 0)
+			(void)regulator_set_voltage(regs->vregs[i].vreg,
+				0, regs->vregs[i].max_voltage);
+
+	}
+
+	return rc;
+}
+#endif
+
 /**
  * dsi_pwr_of_get_vreg_data - Parse regulator supply information
  * @of_node:        Device of node to parse for supply information.
@@ -432,6 +559,46 @@ int dsi_pwr_enable_regulator(struct dsi_regulator_info *regs, bool enable)
 
 	return rc;
 }
+
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+/**
+ * dsi_pwr_enable_regulator() - enable a set of regulator
+ * @regs:       Pointer to set of regulators to enable or disable.
+ * @reg_name:   Name of panel power vreg
+ * @enable:     Enable/Disable regulators.
+ *
+ * return: error code in case of failure or 0 for success.
+ */
+int nubia_dsi_pwr_enable_regulator(struct dsi_regulator_info *regs,
+												const char *reg_name,
+												bool enable)
+{
+	int rc = 0;
+
+	if (regs->count == 0) {
+		DSI_DEBUG("No valid regulators to enable\n");
+		return 0;
+	}
+
+	if (!regs->vregs) {
+		DSI_ERR("Invalid params\n");
+		return -EINVAL;
+	}
+
+	NUBIA_DEBUG("nubia_dsi_pwr_enable_regulator:regs->refcount = %d", regs->refcount);
+	if (enable) {
+		rc = nubia_dsi_pwr_enable_vreg(regs, reg_name, true);
+		if (rc)
+			DSI_ERR("failed to enable regulator:%s\n", regs->vregs->vreg_name);
+	} else {
+		rc = nubia_dsi_pwr_enable_vreg(regs, reg_name, false);
+		if (rc)
+			DSI_ERR("failed to disable regulator:%s\n", regs->vregs->vreg_name);
+	}
+
+	return rc;
+}
+#endif
 
 /*
  * dsi_pwr_panel_regulator_mode_set()

@@ -15,11 +15,14 @@
 #include "dp_altmode.h"
 #include "dp_debug.h"
 #include "sde_dbg.h"
-
+#include <linux/usb/nubia_usb_debug.h>
 
 #define ALTMODE_CONFIGURE_MASK (0x3f)
 #define ALTMODE_HPD_STATE_MASK (0x40)
 #define ALTMODE_HPD_IRQ_MASK (0x80)
+
+#undef NUBIA_USB_LOG_TAG
+#define NUBIA_USB_LOG_TAG "ZtemtDP"
 
 struct dp_altmode_private {
 	bool forced_disconnect;
@@ -116,7 +119,7 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	u8 *payload = (u8 *) data;
 	u8 pin, hpd_state, hpd_irq;
 	bool force_multi_func = altmode->dp_altmode.base.force_multi_func;
-
+	int state;
 	port_index = payload[0];
 	orientation = payload[1];
 	dp_data = payload[8];
@@ -139,18 +142,27 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 			altmode->dp_altmode.base.hpd_high,
 			altmode->dp_altmode.base.hpd_irq);
 	DP_DEBUG("connected=%d\n", altmode->connected);
+    NUBIA_USB_INFO("connected=%d, orientation=%d, pin=%d, hpd_state=%d.\n",
+                  altmode->connected, orientation, pin, hpd_state);
 	SDE_EVT32_EXTERNAL(dp_data, port_index, orientation, pin, hpd_state,
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
 			altmode->dp_altmode.base.hpd_irq, altmode->connected);
-
-	if (!pin) {
+	get_usb_state(&state);
+	NUBIA_USB_INFO(">>>nubia<<<altmode->connected = %d, usb_state = %d.\n", altmode->connected, state);
+	if (!altmode->connected && !state)//touping connect before usb connect£¬then return and wait the usb connect first
+	{
+		goto ack;
+	}
+    //nubia add for plug out hub the mode can not change to default value after plugin
+	if (!pin || !hpd_state) {
 		/* Cable detach */
 		if (altmode->connected) {
 			altmode->connected = false;
 			altmode->dp_altmode.base.alt_mode_cfg_done = false;
 			altmode->dp_altmode.base.orientation = ORIENTATION_NONE;
 			if (altmode->dp_cb && altmode->dp_cb->disconnect)
+                NUBIA_USB_INFO("Cable detach entry disconnect.\n");
 				altmode->dp_cb->disconnect(altmode->dev);
 		}
 		goto ack;
@@ -184,8 +196,10 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 		if (rc)
 			goto ack;
 
-		if (altmode->dp_cb && altmode->dp_cb->configure)
+		if (altmode->dp_cb && altmode->dp_cb->configure) {
+            NUBIA_USB_INFO("DP Configure entry configure.\n");
 			altmode->dp_cb->configure(altmode->dev);
+        }
 		goto ack;
 	}
 
@@ -193,8 +207,10 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	if (altmode->forced_disconnect)
 		goto ack;
 
-	if (altmode->dp_cb && altmode->dp_cb->attention)
+	if (altmode->dp_cb && altmode->dp_cb->attention) {
+        NUBIA_USB_INFO("DP Attention entry attention.\n");
 		altmode->dp_cb->attention(altmode->dev);
+    }
 ack:
 	dp_altmode_send_pan_ack(altmode->amclient, port_index);
 	return rc;

@@ -22,8 +22,17 @@
 #include "msm_kms.h"
 #include "sde_trace.h"
 #include <drm/drm_atomic_uapi.h>
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+#include "../nubia/nubia_disp_preference.h"
+#include "dsi/dsi_panel.h"
+#endif
 
 #define MULTIPLE_CONN_DETECTED(x) (x > 1)
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+extern struct nubia_disp_type nubia_disp_val;
+extern struct dsi_display *nubia_display;
+static uint32_t hbm_mode_state = 0;
+#endif
 
 struct msm_commit {
 	struct drm_device *dev;
@@ -511,6 +520,19 @@ static void complete_commit(struct msm_commit *c)
 	drm_atomic_helper_commit_planes(dev, state,
 				DRM_PLANE_COMMIT_ACTIVE_ONLY);
 
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+        if (hbm_mode_state != nubia_disp_val.hbm_state) {
+                DRM_DEBUG("nubia_disp_val.hbm_state= %d, hbm_mode_state = %d --!\n",
+                        nubia_disp_val.hbm_state, hbm_mode_state);
+                if (nubia_disp_val.hbm_state != 4095) {
+                        SDE_ATRACE_BEGIN("hbm_disable_commit");
+                        nubia_dsi_panel_hbm(nubia_display->panel, nubia_disp_val.hbm_state);
+                        hbm_mode_state = nubia_disp_val.hbm_state;
+                        SDE_ATRACE_END("hbm_disable_commit");
+                }
+        }
+#endif
+
 	msm_atomic_helper_commit_modeset_enables(dev, state);
 
 	/* NOTE: _wait_for_vblanks() only waits for vblank on
@@ -531,6 +553,19 @@ static void complete_commit(struct msm_commit *c)
 	drm_atomic_helper_cleanup_planes(dev, state);
 
 	kms->funcs->complete_commit(kms, state);
+
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+	if (hbm_mode_state != nubia_disp_val.hbm_state) {
+		DRM_DEBUG("nubia_disp_val.hbm_state= %d, hbm_mode_state= %d ++!\n",
+			nubia_disp_val.hbm_state, hbm_mode_state);
+		if (nubia_disp_val.hbm_state == 4095) {
+			SDE_ATRACE_BEGIN("hbm_enable_commit");
+			nubia_dsi_panel_hbm(nubia_display->panel, nubia_disp_val.hbm_state);
+			hbm_mode_state = nubia_disp_val.hbm_state;
+			SDE_ATRACE_END("hbm_enable_commit");
+		}
+	}
+#endif
 
 	drm_atomic_state_put(state);
 

@@ -88,6 +88,21 @@ int dsi_pwr_get_dt_vreg_data(struct device *dev,
  */
 int dsi_pwr_enable_regulator(struct dsi_regulator_info *regs, bool enable);
 
+
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+/**
+ * nubia_dsi_pwr_enable_regulator() - enable a set of regulator by vreg_name
+ * @regs:       Pointer to set of regulators to enable or disable.
+ * @vreg_name:  Panel regulator name
+ * @enable:     Enable/Disable regulators.
+ *
+ * return: error code in case of failure or 0 for success.
+ */
+int nubia_dsi_pwr_enable_regulator(struct dsi_regulator_info *regs,
+												const char *reg_name,
+												bool enable);
+#endif
+
 /**
  * dsi_pwr_panel_regulator_mode_set()
  * set regulator mode for OLED panel

@@ -928,6 +928,8 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 		goto end;
 	}
 
+	DSI_INFO("num of modes:%d \n", count);
+
 	for (i = 0; i < count; i++) {
 		struct drm_display_mode *m;
 

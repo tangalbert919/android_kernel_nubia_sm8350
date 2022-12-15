@@ -30,8 +30,15 @@
 #include "dp_debug.h"
 #include "dp_pll.h"
 #include "sde_dbg.h"
-
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+#include "../../nubiadp/nubia_dp_preference.h"
+#endif
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+extern struct _select_sde_edid_info select_sde_edid_info;
+extern char edid_mode_best_info[32];
+extern struct dp_aux *global_nubia_dp_aux;
+#endif
 
 #define dp_display_state_show(x) { \
 	DP_ERR("%s: state (0x%x): %s\n", x, dp->state, \
@@ -267,7 +274,7 @@ static void dp_audio_enable(struct dp_display_private *dp, bool enable)
 		if (!dp->active_panels[idx])
 			continue;
 		dp_panel = dp->active_panels[idx];
-
+		printk("%s, %d, audio_supported = %d, enable = %d dp_audio_debug entry attention_work.\n", __func__, __LINE__, dp_panel->audio_supported, enable);
 		if (dp_panel->audio_supported) {
 			if (enable) {
 				dp_panel->audio->bw_code =
@@ -621,7 +628,9 @@ static int dp_display_initialize_hdcp(struct dp_display_private *dp)
 	struct dp_parser *parser;
 	void *fd;
 	int rc = 0;
-
+//nubia add disable hdcp function begin
+    return 0;
+//nubia add disable hdcp function end
 	if (!dp) {
 		DP_ERR("invalid input\n");
 		return -EINVAL;
@@ -1533,6 +1542,19 @@ static int dp_display_usbpd_disconnect_cb(struct device *dev)
 		rc = -EINVAL;
 		goto end;
 	}
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+	if(select_sde_edid_info.edid_hot_plug)
+	{
+		select_sde_edid_info.edid_mode_store = true;
+		select_sde_edid_info.edid_hot_plug = false;
+	}
+	else
+	{
+		select_sde_edid_info.edid_mode_store = false;
+	}
+    printk("%s:%d----edid_hot_plug = %d, edid_mode_store = %d--\n",
+			__func__, __LINE__, select_sde_edid_info.edid_hot_plug, select_sde_edid_info.edid_mode_store);
+#endif
 
 	dp = dev_get_drvdata(dev);
 	if (!dp) {
@@ -1565,7 +1587,18 @@ static int dp_display_usbpd_disconnect_cb(struct device *dev)
 	if (!dp->debug->sim_mode && !dp->parser->no_aux_switch
 	    && !dp->parser->gpio_aux_switch)
 		dp->aux->aux_switch(dp->aux, false, ORIENTATION_NONE);
-
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+	select_sde_edid_info.hdmi_connected = false;
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+	DP_DEBUG("====>>>>hdmi_connect_on = 0 dp_display_usbpd_disconnect_cb<<<<====\n");
+#endif
+	if(!select_sde_edid_info.edid_mode_store)
+	{
+		memset(select_sde_edid_info.edid_mode_info, 0x00, SZ_4K);
+		memset(edid_mode_best_info, 0x00, 32);
+		select_sde_edid_info.node_control = false;
+	}
+#endif
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, dp->state);
 end:
 	return rc;
@@ -1769,6 +1802,7 @@ static int dp_display_usbpd_attention_cb(struct device *dev)
 
 	if ((dp->hpd->hpd_irq && dp_display_state_is(DP_STATE_READY)) ||
 			dp->debug->mst_hpd_sim) {
+		printk("%s,%d dp_audio_debug entry attention_work.\n", __func__, __LINE__);
 		queue_work(dp->wq, &dp->attention_work);
 		complete_all(&dp->attention_comp);
 	} else if (dp->process_hpd_connect ||
@@ -2010,9 +2044,9 @@ static int dp_init_sub_modules(struct dp_display_private *dp)
 		dp->hpd = NULL;
 		goto error_hpd;
 	}
-
-	hdcp_disabled = !!dp_display_initialize_hdcp(dp);
-
+    //nubia add disable the hdcp function begin.
+	hdcp_disabled = !!!dp_display_initialize_hdcp(dp);
+    //nubia add disable the hdcp function end.
 	debug_in.panel = dp->panel;
 	debug_in.hpd = dp->hpd;
 	debug_in.link = dp->link;
@@ -2844,6 +2878,14 @@ static enum drm_mode_status dp_display_validate_mode(
 	struct dp_display_mode dp_mode;
 	int rc = 0;
 	bool use_default = true;
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+	static flag = 1;
+	static bool debug_en;
+	static int vrefresh;
+	static int hdisplay;
+	static int vdisplay;
+	static int aspect_ratio;
+#endif
 
 	if (!dp_display || !mode || !panel ||
 			!avail_res || !avail_res->max_mixer_width) {
@@ -2865,6 +2907,43 @@ static enum drm_mode_status dp_display_validate_mode(
 	if (!debug)
 		goto end;
 
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+	//debug->hdisplay = 1600;
+	//debug->vdisplay = 1200;
+	//debug->vrefresh = 120;
+	//debug->aspect_ratio = 0;
+	//printk(">>>>> %s select_sde_edid_info.hdmi_connected = %d \n", __func__, select_sde_edid_info.hdmi_connected);
+	/*when system boot up, we use the best fps and resulation
+      but when echo the edid_modes node, we use the echo value
+     */
+	if(!select_sde_edid_info.node_control){
+		/*first: store default config*/
+		if(flag){
+			debug_en = debug->debug_en ;
+			vrefresh = debug->vrefresh ;
+			hdisplay = debug->hdisplay ;
+			vdisplay = debug->vdisplay ;
+			flag = 0;
+		}
+		/*second: if hdmi disconnect, restore the default config*/
+		if(select_sde_edid_info.hdmi_connected == false){
+			debug->debug_en = debug_en;
+			debug->vrefresh = vrefresh;
+			debug->hdisplay = hdisplay;
+			debug->vdisplay = vdisplay;
+			debug->aspect_ratio = aspect_ratio;
+		}
+		/*if hdmi connected, we chose best resultion and fps*/
+		if(select_sde_edid_info.hdmi_connected == true){
+			debug->debug_en = true;
+			debug->vrefresh = select_sde_edid_info.fps;
+			debug->hdisplay = select_sde_edid_info.h;
+			debug->vdisplay = select_sde_edid_info.v;
+			debug->aspect_ratio =select_sde_edid_info.ratio;
+			//printk("%s: current hdmi fps is %d \n", __func__, select_sde_edid_info.fps);
+		}
+	}
+#endif
 	dp_display->convert_to_dp_mode(dp_display, panel, mode, &dp_mode);
 
 	rc = dp_display_validate_link_clock(dp, mode, dp_mode);
@@ -3633,7 +3712,9 @@ static int dp_display_probe(struct platform_device *pdev)
 		DP_ERR("component add failed, rc=%d\n", rc);
 		goto error;
 	}
-
+#ifdef CONFIG_NUBIA_HDMI_FEATURE
+	global_nubia_dp_aux = dp->aux;
+#endif
 	return 0;
 error:
 	devm_kfree(&pdev->dev, dp);

@@ -20,7 +20,9 @@
 #include "sde_rm.h"
 #include "sde_vm.h"
 #include <drm/drm_probe_helper.h>
-
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+#include "../../nubia/nubia_disp_preference.h"
+#endif
 #define BL_NODE_NAME_SIZE 32
 #define HDR10_PLUS_VSIF_TYPE_CODE      0x81
 
@@ -73,6 +75,42 @@ static const struct drm_prop_enum_list e_frame_trigger_mode[] = {
 	{FRAME_DONE_WAIT_POSTED_START, "posted_start"},
 };
 
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+int nubia_backlight_covert(struct dsi_display *display,
+								         int value)
+{
+	u32 bl_lvl;
+
+	if(!display)
+		return -EINVAL;
+
+	if (!value)
+		return value;
+
+	NUBIA_DEBUG("before nubia covert backlight, value = %d\n", value);
+
+	if (display->panel->ddic_vendor == VIEWTRIX) {
+		if (value >= 336 && value <= 4080)
+			bl_lvl = ((value * 54) / 100) - 156;
+		else
+			bl_lvl = value;
+	} else {
+		//Nubia 4095 -> 2047, 4080 -> 2040
+		if (value > 1 && value < 4095)
+			value = value >> 1;
+
+		bl_lvl = value * (display->panel->bl_config.bl_max_level - display->panel->bl_config.bl_min_level);
+		do_div(bl_lvl, 2040);
+		bl_lvl = value *bl_lvl;
+		do_div(bl_lvl, 2040);
+		bl_lvl += display->panel->bl_config.bl_min_level;
+	}
+
+	NUBIA_DEBUG("after nubia covert backlight, bl_lvl = %d\n",bl_lvl);
+
+	return bl_lvl;
+}
+#endif
 static inline struct sde_kms *_sde_connector_get_kms(struct drm_connector *conn)
 {
 	struct msm_drm_private *priv;
@@ -108,13 +146,34 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	}
 
 	brightness = bd->props.brightness;
-
+	NUBIA_DEBUG("sde_backlight_device_update_status :%d ++\n", brightness);
 	if ((bd->props.power != FB_BLANK_UNBLANK) ||
 			(bd->props.state & BL_CORE_FBBLANK) ||
 			(bd->props.state & BL_CORE_SUSPENDED))
 		brightness = 0;
 
 	display = (struct dsi_display *) c_conn->display;
+
+#ifdef CONFIG_NUBIA_DISP_PREFERENCE
+	if(brightness > nubia_disp_val.bl_limit)
+		brightness = nubia_disp_val.bl_limit;
+	if (display->panel->hbm_mode) {
+		NUBIA_DEBUG("Panel in HBM mode, not allowed set brightness!!\n");
+		return 0;
+	}
+
+	/* HBM mode is 0xFFF(4095), Normal mode max is 0x7FF(2047)*/
+	if ((brightness > display->panel->bl_config.brightness_max_level) && (brightness != 4095))
+		brightness = display->panel->bl_config.brightness_max_level;
+	if ((brightness > c_conn->thermal_max_brightness) && (brightness != 4095))
+		brightness = c_conn->thermal_max_brightness;
+
+	if (brightness != 4095)
+		bl_lvl = nubia_backlight_covert(display,brightness);
+	else
+		bl_lvl = brightness;
+#else
+
 	if (brightness > display->panel->bl_config.bl_max_level)
 		brightness = display->panel->bl_config.bl_max_level;
 	if (brightness > c_conn->thermal_max_brightness)
@@ -123,6 +182,7 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	/* map UI brightness into driver backlight level with rounding */
 	bl_lvl = mult_frac(brightness, display->panel->bl_config.bl_max_level,
 			display->panel->bl_config.brightness_max_level);
+#endif
 
 	if (!bl_lvl && brightness)
 		bl_lvl = 1;
@@ -176,7 +236,7 @@ static int sde_backlight_cooling_cb(struct notifier_block *nb,
 	struct backlight_device *bd = (struct backlight_device *)data;
 
 	c_conn = bl_get_data(bd);
-	SDE_DEBUG("bl: thermal max brightness cap:%lu\n", val);
+	NUBIA_DEBUG("bl: thermal max brightness cap:%lu\n", val);
 	c_conn->thermal_max_brightness = val;
 
 	sde_backlight_device_update_status(bd);
@@ -949,6 +1009,7 @@ void sde_connector_helper_bridge_disable(struct drm_connector *connector)
 	if (!sde_in_trusted_vm(sde_kms) && c_conn->bl_device) {
 		c_conn->bl_device->props.power = FB_BLANK_POWERDOWN;
 		c_conn->bl_device->props.state |= BL_CORE_FBBLANK;
+		NUBIA_DEBUG("sde_connector_helper_bridge_disable:backlight=%d \n", c_conn->bl_device->props.brightness);
 		backlight_update_status(c_conn->bl_device);
 	}
 
@@ -985,6 +1046,7 @@ void sde_connector_helper_bridge_enable(struct drm_connector *connector)
 	if (!sde_in_trusted_vm(sde_kms) && c_conn->bl_device) {
 		c_conn->bl_device->props.power = FB_BLANK_UNBLANK;
 		c_conn->bl_device->props.state &= ~BL_CORE_FBBLANK;
+		NUBIA_DEBUG("sde_connector_helper_bridge_enable:backlight=%d \n", c_conn->bl_device->props.brightness);
 		backlight_update_status(c_conn->bl_device);
 	}
 	c_conn->panel_dead = false;
