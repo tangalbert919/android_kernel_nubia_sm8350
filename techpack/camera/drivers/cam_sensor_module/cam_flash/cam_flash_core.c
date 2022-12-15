@@ -12,6 +12,32 @@
 #include "cam_packet_util.h"
 #include <linux/math64.h>
 
+/*ZTEMT: fengxun add for flash debug--------Start*/
+int cam_flash_switch(struct cam_flash_ctrl *flash_ctrl, int enable)
+{
+
+	if(1 == enable){
+		CAM_ERR(CAM_FLASH, "torch_switch ON \n");
+		led_trigger_event(flash_ctrl->flash_trigger[0],0);
+		led_trigger_event(flash_ctrl->torch_trigger[0],120);
+		usleep_range(100000, 110000);
+		led_trigger_event(flash_ctrl->switch_trigger,1);
+	}else if(0 == enable){
+		CAM_ERR(CAM_FLASH, "torch_switch OFF \n");
+		led_trigger_event(flash_ctrl->flash_trigger[0],0);
+		led_trigger_event(flash_ctrl->torch_trigger[0],0);
+		usleep_range(100000, 110000);
+		led_trigger_event(flash_ctrl->switch_trigger,0);
+	}else{
+		CAM_ERR(CAM_FLASH, "Invalid argument \n");
+		return -1;
+	}
+
+	return 0;
+
+}
+/*ZTEMT: fengxun add for flash debug--------End*/
+
 static uint default_on_timer = 2;
 module_param(default_on_timer, uint, 0644);
 

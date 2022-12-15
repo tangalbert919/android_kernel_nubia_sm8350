@@ -685,12 +685,24 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 		return -EINVAL;
 	}
 
-	rc = camera_io_dev_read(
+	//ztemt:caipengbo add for ov02a10 read ID---start
+	if (0x2509 == slave_info->sensor_id)
+	{
+		rc = camera_io_dev_read(
+		&(s_ctrl->io_master_info),
+		slave_info->sensor_id_reg_addr,
+		&chipid, CAMERA_SENSOR_I2C_TYPE_BYTE,
+		CAMERA_SENSOR_I2C_TYPE_WORD);
+	}
+	else
+	{
+		rc = camera_io_dev_read(
 		&(s_ctrl->io_master_info),
 		slave_info->sensor_id_reg_addr,
 		&chipid,
 		s_ctrl->sensor_probe_addr_type,
 		s_ctrl->sensor_probe_data_type);
+	}
 
 	CAM_DBG(CAM_SENSOR, "read id: 0x%x expected id 0x%x:",
 		chipid, slave_info->sensor_id);
@@ -1223,6 +1235,8 @@ int cam_sensor_power_up(struct cam_sensor_ctrl_t *s_ctrl)
 		goto cci_failure;
 	}
 
+	is_eeprom_poweron = true;   //nubia kangxiong add for CalibrationData
+
 	return rc;
 cci_failure:
 	if (cam_sensor_util_power_down(power_info, soc_info))
@@ -1267,6 +1281,7 @@ int cam_sensor_power_down(struct cam_sensor_ctrl_t *s_ctrl)
 	}
 
 	camera_io_release(&(s_ctrl->io_master_info));
+	is_eeprom_poweron = false;    //nubia kangxiong add for CalibrationData
 
 	return rc;
 }

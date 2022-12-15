@@ -109,11 +109,42 @@ static int cam_eeprom_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
 				emap[j].mem.addr_type,
 				emap[j].mem.data_type,
 				emap[j].mem.valid_size);
+				
 			if (rc < 0) {
-				CAM_ERR(CAM_EEPROM, "read failed rc %d",
-					rc);
-				return rc;
+				if(e_ctrl->io_master_info.cci_client->sid == 0x56&&e_ctrl->io_master_info.cci_client->cci_i2c_master==0x01){
+				    CAM_ERR(CAM_EEPROM, "change eeprom address");
+					e_ctrl->io_master_info.cci_client->sid = 0x50;
+					i2c_reg_settings.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
+					i2c_reg_settings.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
+					i2c_reg_settings.size = 1;
+					i2c_reg_array.reg_addr = 0x8000;
+					i2c_reg_array.reg_data = 0x0C;
+					i2c_reg_array.delay = 0;
+					i2c_reg_settings.reg_setting = &i2c_reg_array;
+					rc = camera_io_dev_write(&e_ctrl->io_master_info,
+				        &i2c_reg_settings);
+					usleep_range(10000, 11000);
+					e_ctrl->io_master_info.cci_client->sid = 0x56;
+				}
+				if(rc < 0){
+					CAM_ERR(CAM_EEPROM, " read failed rc %d",rc);
+					return rc;
+				}else{
+					CAM_INFO(CAM_EEPROM,"change eeprom address success!");
+					rc = camera_io_dev_read_seq(&e_ctrl->io_master_info,
+				        emap[j].mem.addr, memptr,
+				        emap[j].mem.addr_type,
+				        emap[j].mem.data_type,
+				        emap[j].mem.valid_size);
+				 }
 			}
+			CAM_INFO(CAM_EEPROM,"eeprom_name = %s 0x%x 0x%x ",e_ctrl->device_name,e_ctrl->io_master_info.cci_client->sid,e_ctrl->io_master_info.cci_client->cci_i2c_master);//,e_ctrl->io_master_info.cci_client->cci_device
+			/*ZTEMT: kangxiong  add for 3D test eeprom write--------Start*/
+			if (e_ctrl->io_master_info.cci_client->sid == 0x56&&e_ctrl->io_master_info.cci_client->cci_i2c_master==0x01)
+			{
+			    cam_nubia_eeprom_io_init(e_ctrl->io_master_info);
+			}
+			/*ZTEMT: kangxiong add for 3D test eeprom write--------End*/
 			memptr += emap[j].mem.valid_size;
 		}
 

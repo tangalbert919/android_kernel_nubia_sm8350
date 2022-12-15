@@ -1383,6 +1383,7 @@ static int32_t cam_cci_read(struct v4l2_subdev *sd,
 		cam_cci_flush_queue(cci_dev, master);
 		goto rel_mutex_q;
 	}
+    CAM_INFO(CAM_CCI, "hw_status is : %d", cci_dev->cci_master_info[master].status);
 
 	if (cci_dev->cci_master_info[master].status) {
 		CAM_ERR(CAM_CCI, "ERROR with Slave 0x%x:",
@@ -1865,7 +1866,8 @@ int32_t cam_cci_core_cfg(struct v4l2_subdev *sd,
 		return -EINVAL;
 	}
 
-	if (cci_dev->cci_master_info[master].status < 0) {
+	if ((cci_dev->cci_master_info[master].status < 0) &&
+		(cci_ctrl->cmd != MSM_CCI_RELEASE)) {
 		CAM_WARN(CAM_CCI, "CCI hardware is resetting");
 		return -EAGAIN;
 	}

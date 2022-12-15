@@ -23,6 +23,7 @@
 #include "cam_csiphy_dev.h"
 #include "cam_eeprom_dev.h"
 #include "cam_ois_dev.h"
+#include "cam_nubia_dev.h"
 
 #if IS_REACHABLE(CONFIG_LEDS_QPNP_FLASH_V2) || \
 	IS_REACHABLE(CONFIG_LEDS_QTI_FLASH)
@@ -112,6 +113,7 @@ static const struct camera_submodule_component camera_sensor[] = {
 	IS_REACHABLE(CONFIG_LEDS_QTI_FLASH)
 	{&cam_flash_init_module, &cam_flash_exit_module},
 #endif
+    {&cam_nubia_node_init_module, &cam_nubia_node_exit_module},//ztemt added by kangxiong for boken calibration
 #endif
 };
 

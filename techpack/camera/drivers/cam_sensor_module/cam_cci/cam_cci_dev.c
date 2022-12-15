@@ -138,7 +138,12 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 
 	if (irq_status0 & CCI_IRQ_STATUS_0_RST_DONE_ACK_BMSK) {
 		struct cam_cci_master_info *cci_master_info;
+        CAM_INFO(CAM_CCI, "MO_RESET_PENDING: %d M1_RESET_PENDING: %d",
+            cci_dev->cci_master_info[MASTER_0].reset_pending,
+            cci_dev->cci_master_info[MASTER_1].reset_pending);
 		if (cci_dev->cci_master_info[MASTER_0].reset_pending == true) {
+            CAM_INFO(CAM_CCI, "rst_done invoked for m0 status: %d",
+                cci_dev->cci_master_info[MASTER_0].status);
 			cci_master_info = &cci_dev->cci_master_info[MASTER_0];
 			cci_dev->cci_master_info[MASTER_0].reset_pending =
 				false;
@@ -149,6 +154,8 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 			complete_all(&cci_master_info->th_complete);
 		}
 		if (cci_dev->cci_master_info[MASTER_1].reset_pending == true) {
+            CAM_INFO(CAM_CCI, "rst_done invoked for m1 status: %d",
+                cci_dev->cci_master_info[MASTER_1].status);
 			cci_master_info = &cci_dev->cci_master_info[MASTER_1];
 			cci_dev->cci_master_info[MASTER_1].reset_pending =
 				false;
