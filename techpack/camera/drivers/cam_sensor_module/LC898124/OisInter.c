@@ -944,7 +944,7 @@ void msm_ois_lc898124_enable(int enable)
     }
 }
 
- int msm_ois_lc898124_check_status()
+ int msm_ois_lc898124_check_status(void)
 {
     uint32_t readData = 0;
     int cnt = 0;

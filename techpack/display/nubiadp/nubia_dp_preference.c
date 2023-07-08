@@ -131,7 +131,7 @@ void sys_print_edid_info(struct _user_select_sde_edid_info *info_temp)
 	printk("h = %d, v = %d, fps = %d, name=%s \n", info_temp->h, info_temp->v, info_temp->fps, info_temp->device_name);
 }
 
-void sys_show_edid_info()
+void sys_show_edid_info(void)
 {
 #if 1
 	struct _user_select_sde_edid_info *info_temp = edid_info;
