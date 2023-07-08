@@ -187,7 +187,7 @@ dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc                    \
 		 -undef -D__DTS__
  
 #nubia: Set nubia overwrite dtsi file
-$(warning PRODUCT_BUILD_NX669J_S = $(PRODUCT_BUILD_NX669J_S))
+#$(warning PRODUCT_BUILD_NX669J_S = $(PRODUCT_BUILD_NX669J_S))
 ifeq ($(PRODUCT_BUILD_NX669J_S),true)
 dtc_cpp_flags += -DNUBIA_OVERWRITE_DTSI_FILE=\"../nubia/NX669S/head.dtsi\"
 else
